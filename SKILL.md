@@ -9,8 +9,16 @@ Raw clips in, finished reel out. The user never opens an editor: they review a p
 round is a ~2 minute re-render.
 
 Read before building: `references/looks.md` (the three looks, exact values), `references/layout.md` (safe zone,
-placement, behind-head formula), `references/gotchas.md` (every trap already hit once). Read
-`references/overlays.md` when the script calls for an animated insert.
+placement, behind-head formula), `references/gotchas.md` (every trap already hit once), `references/anti-ai-slop.md`
+(mandatory human-grade editorial rules — zero AI slop), and `references/pacing-and-cuts.md` (shot durations & J/L cut
+rules). Read `references/overlays.md` when the script calls for an animated insert.
+
+> **Multi-Platform Suite Router:** This repository ships a 5-skill suite (`python3 "SK/install_all.py"` installs all 5):
+> - `/video-edit` (this skill): 9:16 Talking-Head Reels / TikTok / Shorts with subject cutout & kinetic typography behind head
+> - `/youtube-edit` (`skills/youtube-edit`): 16:9 YouTube Vlog, Food & Travel Review, and Studio Talking-Head with A/B-roll J/L cuts
+> - `/commercial-promo` (`skills/commercial-promo`): Multi-ratio (`9:16`, `4:5`, `1:1`, `16:9`) Product Ad & Promo with beat-sync & price badge
+> - `/podcast-interview` (`skills/podcast-interview`): `16:9` / `9:16` Dual-Speaker Split-Screen Podcast & Audiograms
+> - `/video-director` (`skills/video-director`): Master Router, 6-Gate QA Audit (`G0–G4` + EBU R128 `-14 LUFS`), Beat-Sync, and Smart Reframe
 
 Works on macOS, Linux and Windows. setup.py detects the machine at the start of every run and every command below
 comes from that record, so never guess paths or shells: see "This machine" right after Step 0.

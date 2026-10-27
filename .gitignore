@@ -2,8 +2,17 @@ config.json
 .platform.json
 .venv/
 __pycache__/
+**/__pycache__/
+*.pyc
 assets/template/assets/sfx/*.mp3
 assets/template/assets/sfx/*.part
+skills/*/config.json
+skills/*/.platform.json
+skills/*/.venv/
+skills/*/assets/sfx/*.mp3
+skills/*/assets/sfx/*.part
+skills/*/assets/fonts/*.ttf
 *.log
 .DS_Store
+**/.DS_Store
 node_modules/
