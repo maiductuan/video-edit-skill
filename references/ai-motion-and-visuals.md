@@ -1,78 +1,56 @@
-# AI Visual Storytelling & Motion Graphics Playbook (`ai-motion-and-visuals.md`)
+# TVC Cinematography, Photorealistic B-Roll & Broadcast Motion Playbook (`ai-motion-and-visuals.md`)
 
-Raw talking-head or single-angle vlog footage quickly feels **static ("đơ") and dry ("khô")** if the edit only trims pauses and slaps plain text subtitles on top. Great human editors (Vox, Johnny Harris, Ali Abdaal, MKBHD, high-retention Reels/Shorts creators) continuously evolve the frame using **purposeful visual metaphors, AI-generated editorial visuals, animated data/concept cards, and subtle optical camera motion** — while strictly obeying `anti-ai-slop.md`.
+A great video must avoid two opposite traps:
+1. **Static & Dry ("Đơ & Khô"):** Leaving a single talking-head camera angle unchanged for 15–30 seconds with only plain subtitles.
+2. **Cheap "Overly AI" Look ("Nhìn quá AI / Rẻ tiền"):** Plastic hyper-saturated AI illustrations, uncanny AI hands/faces, chunky SaaS dashboard boxes with loud neon/yellow pill buttons, or mechanical linear zooming.
 
----
-
-## 1. The Anti-Static Visual Rhythm Rule ("No Bare Talking-Head")
-
-Never leave an unchanged static talking-head shot on screen for long stretches:
-- **Vertical `9:16` (`/video-edit` — Reels / TikTok / Shorts):** Maximum **4.0–4.5s** without a visual or camera evolution. Every 5–7s should introduce a fresh visual anchor (AI visual card, behind-speaker wall graphic, B-roll cutaway, animated UI/infographic insert, or 4K punch-in / 2.5D parallax push).
-- **Horizontal `16:9` (`/youtube-edit` — YouTube Vlog / Review / Talking-Head):** Maximum **5.5–6.5s** of bare talking-head. Whenever the speaker explains a concept, story, number, comparison, location, or step without matching real B-roll footage, proactively generate **AI B-roll visuals (with Ken Burns motion)** or **animated motion cards (`visual_card`, `stat_card`, `checklist`, `comparison`, `kinetic_quote`)**.
-
-> **Anti-Slop Guardrail (`Max 2 Rule`):** Keep the frame alive through *sequential rhythm*, not clutter. Never stack 4 widgets at once. At any timestamp, pair the speaker/footage with **at most 1 hero graphic or visual card** (+ clean subtitle if enabled), using smooth cubic deceleration (`power3.out`, zero cartoon triple-bounce).
+Every edit produced by `/video-edit` (`9:16`) and `/youtube-edit` (`16:9`) must aim for the visual restraint and physical realism of a **high-end TVC, Netflix Documentary (*Chef's Table*, *Street Food*), Sony Alpha Film, or Apple Keynote**.
 
 ---
 
-## 2. Generating High-Taste AI Images (`image-generator` / Gemini Image)
+## 1. TVC Visual Pacing ("Alive, Never Chaotic")
 
-When real B-roll is missing or the speaker mentions an abstract concept, metaphor, historical/story scene, comparison, or product detail, **proactively generate visuals** into `<project>/assets/ai_visuals/` (run `image-generator` subagents in parallel so image generation adds almost zero wall-clock wait!).
-
-### What to Generate vs. What is Banned
-
-| DO Generate (Human Art-Director Taste) | NEVER Generate (Cheap AI Slop) |
-|---|---|
-| **Editorial Collage & Warm Illustrations:** Clean Vox/Kinfolk-style editorial illustrations on textured paper, warm charcoal, or muted brand tones | **Fake AI Studio Rooms:** Never permanently replace the speaker's real room background behind their cutout with a fake AI bedroom/office |
-| **Cinematic B-Roll Cutaway Photography:** Realistic 35mm-style close-ups (e.g. steaming bowl texture, street lanterns at dusk, hands sketching on desk, minimalist workspace, architecture) with natural lighting and shallow depth of field | **Neon Sci-Fi Cyborg / Glowing Brain Clichés:** Ban purple/cyan matrix grids, glowing holographic brains, floating 3D robots with 7 fingers, or baked-in garbled AI gibberish text |
-| **Clean Isometric / Concept Visuals:** Minimalist object renders, clean maps, or visual metaphors **without tiny baked-in text** (let Python / HyperFrames render crisp Vietnamese or English typography on top!) | **Text-Heavy AI Images:** Never ask an image model to render Vietnamese sentences or paragraphs inside the image — generate clean visual art and add typography via `build_graphics.py` or `build.py` |
-
-### Prompting Formula for `image-generator`
-Always specify:
-1. **Aspect Ratio & Framing:** `16:9 widescreen (1920x1080)` for YouTube B-roll cutaways, `4:3` or `1:1` for floating PiP `visual_card` inserts, `9:16 vertical (1080x1920)` for full-screen Reel B-roll cutaways.
-2. **No Text Rule:** Explicitly append *"No text, no watermarks, no UI chrome, no logos"* so typography added by our graphics engine stays 100% sharp and typo-free.
-3. **Color Harmony:** Match the video's active look (`warm golden-hour editorial`, `clean minimalist studio slate`, `Kodak Portra 400 natural film tones`, or `cream & butter-yellow editorial`).
+- **Vertical `9:16` (`/video-edit` — Commercial Reels / TikTok / Shorts):** Evolve the frame every **4.0–4.5s** using subtle 4K punch-ins, 2.5D optical slider parallax, optical-matched B-roll cutaways (`1.8s–3.0s`), sleek smoked-glass cinema plates, or clean HyperFrames motion typography.
+- **Horizontal `16:9` (`/youtube-edit` — YouTube Documentary Vlog / Review / Talking-Head):** Evolve the frame every **5.5–6.5s**. When real B-roll footage is missing during an explanation, weave **photorealistic optical-matched B-roll plates** (L-cut over continuous speech) or **TVC broadcast motion graphics** (`intro`, `lower_third`, `visual_card`, `stat_card`, `checklist`, `comparison`, `kinetic_quote`).
+- **Restraint (`Max 2 Rule`):** Never stack multiple cards at once. One clean broadcast plate + natural footage at a time.
 
 ---
 
-## 3. How to Composite AI Visuals & Motion in `/video-edit` (`9:16`)
+## 2. Generating Photorealistic TVC Plates That Do NOT Look Like AI (`image-generator`)
 
-`assets/template/build.py` ships 4 built-in anti-static mechanisms (in addition to behind-head kinetic words and parallel HyperFrames `.webm` sub-agent inserts):
+When real B-roll is missing, **default to Live-Action Cinema Photography**, NEVER cartoonish digital art, 3D renders, or glowing sci-fi clichés.
 
-1. **Floating Editorial Visual Cards (`AI_CARDS` / `ai_cards()`, `z-index: 8`):**
-   - Places an AI illustration or photo inside a rounded bordered card (`border-radius: 28px`, subtle `-5°..+6°` editorial tilt, deep drop shadow, optional caption pill) beside or below the speaker (`y <= 1470` safe zone).
-   - Automatically animates an **inner Ken Burns zoom (`scale 1.0 -> 1.12`)** inside the card window so the image feels alive, never pasted on like a dead sticker.
-2. **Behind-Speaker Wall Canvas (`WALL_VISUALS` / `wall_visuals()`, `z-index: 2`):**
-   - Sits *between* `#bgv` (base video) and `#cutwrap` (speaker background cutout)!
-   - Displays a wide `1000×680` visual card, diagram, or moodboard behind the speaker's shoulders/head (`top: 235px`, `left: 40px`) with subtle drift while `#cut` stays crisp in front — creating true 3-layer studio depth.
-3. **Full-Bleed B-Roll Cutaways (`BROLL_CUTAWAYS` / `broll_cutaways()`, `z-index: 5`):**
-   - Covers the frame for `1.8s–3.2s` (L-cut while the speaker's voice continues!) using either a real B-roll video or an AI-generated `9:16` visual with **Ken Burns scale + pan motion**, keeping kinetic captions legible on top.
-4. **2.5D Optical Parallax Camera Push (`PARALLAX_SHOTS` / `parallax_pushes()`):**
-   - On talking-head segments longer than `3.0s`, scales `#bgv` slowly (`1.0 -> 1.025`) while scaling the speaker cutout `#cutwrap` slightly faster (`1.0 -> 1.065`). The differential zoom creates authentic optical camera-slider parallax between the speaker and their room!
+### A. Mandatory Subject Rules (Zero Uncanny Valley)
+1. **NEVER generate close-up AI human faces, eyes, or hands/fingers holding utensils, phones, or products** — human anatomy is the #1 instant giveaway of AI.
+2. **Shoot TVC Tabletop, Macro, Object & Atmospheric Cutaways instead:**
+   - **Culinary / Food Review:** Macro close-up of simmering broth, ceramic bowl texture on dark aged wood, steam catching warm directional morning window light, fresh herbs with water droplets, moody empty lantern-lit alley at blue hour with shallow foreground bokeh.
+   - **Tech / Business / Studio Essay:** Minimalist overhead or 45-degree shot of brushed aluminum hardware, archival paper notebook on dark walnut/linen desk with natural window blinds shadow (gobo), architectural glass interior with shallow depth of field, warm desk lamp practical light.
+   - **Travel / Lifestyle:** Wide atmospheric establishing shot with foreground out-of-focus foliage/archway, rain reflections on cobblestone, vintage signage texture, sunlight filtering through café window.
+3. **NEVER include text inside generated images** (*"No text, no typography, no watermarks, no logos, no UI"*). Let our 2x-supersampled vector broadcast engine render crisp Vietnamese/English typography on top.
+4. **NEVER write `"MINH HỌA AI"`, `"AI VISUAL"`, or `"ẢNH AI"` on any on-screen badge or caption!** A TVC never announces its VFX plates. Always write real story context (e.g., `"HỘI AN · CHIỀU MUỘN"`, `"NGUYÊN LIỆU TRUYỀN THỐNG"`, `"GÓC QUAY CHI TIẾT"`).
 
-### Parallel HyperFrames Motion Sub-Agents (Beyond App UIs)
-In Step 5 of `/video-edit`, spawn parallel sub-agents (`references/overlays.md`) not only when an app UI is mentioned, but whenever the script benefits from:
-- **Animated Metric / Counter Cards** (`0 -> 10x`, `+85%`, animated bar/line chart)
-- **Before vs. After Split Cards** (pain point -> transformation synced to spoken beats)
-- **3-Step Animated Flowcharts / Checklists** (SVG connector lines drawing via `strokeDashoffset`)
-- **Mixed-Media Collage Inserts** (animating 2–3 AI-generated PNG assets with GSAP parallax + drawn SVG arrows)
+### B. Exact TVC Cinematography Prompt Template for `image-generator`
+Use this camera-first structure for every generated B-roll plate:
+> `"Live-action 35mm commercial film still of [physical object / tabletop detail / architectural atmosphere], shot on ARRI Alexa Mini LF with Cooke Panchro 50mm f/2.0 prime lens. Natural directional window key light with soft negative fill and gentle highlight roll-off, shallow depth of field with authentic optical bokeh, real physical surface micro-texture (natural wood grain / ceramic glaze / linen / subtle atmospheric haze), Kodak Vision3 250D neutral documentary color science, unretouched real-world photography. No people's faces or hands, no CGI gloss, no neon lighting, no text, no watermarks."`
 
 ---
 
-## 4. How to Composite AI Visuals & Motion in `/youtube-edit` (`16:9`)
+## 3. Automatic Optical Plate Matching (Built Into Our Pipeline)
 
-`/youtube-edit` includes native motion rendering in `assemble.py`, `build_graphics.py`, and `render.py`:
+Raw still images look fake in video if they slide linearly with hyper-digital contrast. Our pipeline automatically applies **VFX Optical Plate Matching**:
+- **In `/youtube-edit` (`scripts/assemble.py` & `scripts/build_graphics.py`):**
+  - **De-Plasticize Color & Contrast:** Automatically tames digital saturation (`saturation=0.93`, `contrast=0.985`) before the master film grade so AI plates match real phone/mirrorless camera dynamic range.
+  - **Optical Lens Falloff & 35mm Sensor Micro-Dither:** Adds subtle corner lens falloff (`vignette=PI/9`) and ultra-fine temporal luma sensor micro-dither (`noise=c0s=3:c0f=t`) on full-screen image B-roll so moving frames feel captured by a physical CMOS cinema sensor rather than a sliding PNG.
+  - **Sinusoidal Gimbal Inertia (`0.5 - 0.5*cos(PI*t/T)`):** Replaces stiff linear `zoompan` with dampened slider/gimbal acceleration & deceleration at a restrained **4.5%–6.2%** travel.
+- **In `/video-edit` (`assets/template/build.py`):**
+  - `.optplate`, `.aiframe img`, and `.wallvis img` automatically pass through `contrast(.98) saturate(.91) brightness(.97)` and inherit the reel's active `.g` camera grade + optical vignette on `BROLL_CUTAWAYS`, moving with `ease: 'sine.inOut'` (`1.0 -> 1.062`).
 
-### A. AI Image B-Roll + Dynamic Camera Motion in `edl.json` (`assemble.py`)
-- **AI Images as Full 16:9 B-Roll (`type: "broll"` or inside `broll_inserts`):**
-  Pass `"image": "assets/ai_visuals/scene_01.png"` (or an image clip ID from `sources.json`) with `"motion": "push_in" | "pull_out" | "pan_right" | "pan_left" | "drift_up"`. `assemble.py` supersamples the image to 4K (`3840×2160`) and renders silky-smooth 60fps Ken Burns camera motion with zero pixel jitter!
-- **Dynamic Camera Motion on Real Video Clips:**
-  Add `"motion": "push_in" | "pull_out" | "pan_right" | "pan_left"` (and optional `"motion_amt": 0.06`) to any A-roll or B-roll segment in `edl.json` so long explanations gently push in toward the speaker or pan across a dish/street scene.
+---
 
-### B. Animated RGBA Motion Graphics in `graphics.json` (`build_graphics.py`)
-In addition to `intro`, `chapter`, `lower_third`, `callout`, and `subscribe`, use these **6 animated motion & visual overlay types** (rendered as lossless RGBA motion clips so elements truly animate frame-by-frame!):
-1. **`visual_card`**: Floating Picture-in-Picture editorial card (`left`, `right`, or `center`) framing an AI-generated image/photo with **live inner Ken Burns zoom (`1.0 -> 1.09`)**, category pill, title, and caption beside the talking host.
-2. **`stat_card`**: Hero number/metric card where **numbers smoothly count up from 0** (`0% -> 92%`, `0đ -> 45.000đ`, `0x -> 3.5x`) and an accent progress bar fills with cubic ease-out.
-3. **`checklist`**: Step-by-step / key-takeaways card where **items 1, 2, 3, 4 stagger in sequentially** on screen synced to the explanation (never a static wall of text!).
-4. **`comparison`**: Two-column **Before vs. After / Pros vs. Cons** split card where Column A lands first and Column B reveals after `split_delay` seconds with an accent highlight.
-5. **`kinetic_quote`**: Editorial pull-quote / thesis highlight banner with a live sweeping accent underline bar.
-6. **`custom_motion`**: Embeds any custom transparent `.webm` (VP9 alpha) or `.mov` (QuickTime `qtrle` RGBA) motion graphic built by a sub-agent or HyperFrames.
+## 4. TVC Broadcast Motion Design Grammar
+
+All 10 built-in graphics in `/youtube-edit` (`scripts/build_graphics.py`) render as **30fps lossless RGBA motion clips (`.mov` `qtrle`)** using high-end broadcast craft:
+- **Translucent Smoked Obsidian Glass (`alpha ~82%`) + `1px` Specular Hairline Border** (2x supersampled with Lanczos anti-aliasing — zero jagged pixel corners, zero chunky SaaS boxes).
+- **Wide-Tracked Swiss Micro-Kickers (`+3.4px` character tracking)** paired with a `5px` precision accent square instead of loud solid-colored pill buttons.
+- **Masked Baseline Typography Reveals (`overflow: hidden`, `quintic ease-out` `1 - (1-t)^5`)** where headlines rise cleanly out of an invisible baseline while `1.5px–2.5px` architectural hairline rules draw across.
+- **Precision `2.5px` Telemetry Lines (`stat_card`)** with a leading accent dot instead of fat cartoon progress bars.

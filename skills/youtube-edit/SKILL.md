@@ -96,10 +96,10 @@ What `ingest.py` produces:
 
 ---
 
-### 2. Generate AI Visuals in Parallel (`image-generator` -> `<project_dir>/assets/ai_visuals/`)
-Audit the transcript for stretches > `6.0s` where no matching real B-roll exists (or where an editorial diagram/illustration elevates the story):
-- Spawn `image-generator` subagents in parallel to save `16:9` (for full-screen B-roll cutaways) or `4:3` (for floating PiP `visual_card` inserts) images into `<project_dir>/assets/ai_visuals/`.
-- Prompt for human art-director styles matching the active look (e.g., *warm 35mm documentary photography*, *clean editorial collage illustration on warm paper/charcoal*, *minimalist studio product macro*) and always include *"No text, no watermarks, no UI chrome, no neon sci-fi clichés"*.
+### 2. Generate Photorealistic TVC B-Roll Plates in Parallel (`image-generator` -> `<project_dir>/assets/ai_visuals/`)
+Audit the transcript for stretches > `6.0s` where no matching real B-roll exists:
+- Spawn `image-generator` subagents in parallel to save `16:9` (for full-screen B-roll cutaways) or `4:3` (for PiP `visual_card` plates) images into `<project_dir>/assets/ai_visuals/`.
+- **Strict TVC Photorealism Rule (Never Look "AI"):** Prompt for **live-action 35mm commercial photography** (*shot on ARRI Alexa Mini LF / Sony FX3, Cooke 50mm f/2.0 prime, natural directional window light with negative fill, authentic physical textures, shallow depth of field, Kodak Vision3 neutral documentary color*). Shoot **tabletop macros, culinary details, architectural atmospheres, or physical objects** — **NEVER** generate close-up AI human faces/hands, **NEVER** use neon/sci-fi/cartoon styles, **NEVER** bake text into images, and **NEVER** write `"MINH HỌA AI"` or `"AI VISUAL"` on any card tag (`assemble.py` and `build_graphics.py` automatically apply optical chroma/contrast matching, subtle lens falloff, fine luma sensor micro-dither, and sinusoidal gimbal inertia so plates blend seamlessly with real camera footage).
 
 ---
 

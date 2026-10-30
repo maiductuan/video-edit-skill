@@ -147,6 +147,17 @@ BROLL_CUTAWAYS = []
 PARALLAX_SHOTS = []
 
 
+def _clean_tvc_label(label):
+    """Strip self-referential 'AI' tags so broadcast frames never announce 'AI VISUAL'."""
+    if not label:
+        return ''
+    s = str(label).strip()
+    for bad in ('AI VISUAL', 'MINH HỌA AI', 'MINH HOA AI', 'AI GENERATED', 'ẢNH AI'):
+        if s.upper() == bad:
+            return ''
+    return s
+
+
 def ai_cards():
     html, tw = [], []
     for cid, fname, label, a, b, x, y, w, h, rot in AI_CARDS:
@@ -154,18 +165,19 @@ def ai_cards():
         if not os.path.exists(src):
             continue
         dur = max(0.4, b - a)
-        lbl = f'<div class="ailabel">{label}</div>' if label else ''
+        clean_lbl = _clean_tvc_label(label)
+        lbl = f'<div class="ailabel"><span class="aidot"></span>{clean_lbl}</div>' if clean_lbl else ''
         html.append(
             f'<div id="{cid}" class="aicard" style="left:{x}px;top:{y}px;width:{w}px">'
             f'<div class="aiframe" style="width:{w}px;height:{h}px">'
             f'<img id="aiimg_{cid}" src="{src}" alt="" /></div>{lbl}</div>'
         )
         tw += [
-            f"gsap.set('#{cid}',{{autoAlpha:0,rotation:{rot},scale:.88,y:42}});",
+            f"gsap.set('#{cid}',{{autoAlpha:0,rotation:{rot},scale:.95,y:22}});",
             f"gsap.set('#aiimg_{cid}',{{scale:1,x:0,y:0}});",
-            f"tl.to('#{cid}',{{autoAlpha:1,scale:1,y:0,duration:.34,ease:'power3.out'}},{a:.3f});",
-            f"tl.fromTo('#aiimg_{cid}',{{scale:1,x:0}},{{scale:1.12,x:-10,duration:{dur:.3f},ease:'none',immediateRender:false}},{a:.3f});",
-            f"tl.to('#{cid}',{{autoAlpha:0,scale:.92,y:-24,duration:.18,ease:'power2.in'}},{max(a + .18, b - .18):.3f});",
+            f"tl.to('#{cid}',{{autoAlpha:1,scale:1,y:0,duration:.42,ease:'expo.out'}},{a:.3f});",
+            f"tl.fromTo('#aiimg_{cid}',{{scale:1,x:0}},{{scale:1.065,x:-6,duration:{dur:.3f},ease:'sine.inOut',immediateRender:false}},{a:.3f});",
+            f"tl.to('#{cid}',{{autoAlpha:0,scale:.97,y:-12,duration:.22,ease:'power2.in'}},{max(a + .22, b - .22):.3f});",
             f"tl.set('#{cid}',{{autoAlpha:0}},{b:.3f});",
         ]
     return html, tw
@@ -183,10 +195,10 @@ def wall_visuals():
             f'<img id="wimg_{wid}" src="{src}" alt="" /></div>'
         )
         tw += [
-            f"gsap.set('#{wid}',{{autoAlpha:0,y:28,scale:.96}});",
-            f"tl.to('#{wid}',{{autoAlpha:1,y:0,scale:1,duration:.36,ease:'power3.out'}},{a:.3f});",
-            f"tl.fromTo('#wimg_{wid}',{{scale:1}},{{scale:1.07,duration:{dur:.3f},ease:'none',immediateRender:false}},{a:.3f});",
-            f"tl.to('#{wid}',{{autoAlpha:0,y:-16,duration:.2,ease:'power2.in'}},{max(a + .2, b - .2):.3f});",
+            f"gsap.set('#{wid}',{{autoAlpha:0,y:18,scale:.97}});",
+            f"tl.to('#{wid}',{{autoAlpha:1,y:0,scale:1,duration:.44,ease:'expo.out'}},{a:.3f});",
+            f"tl.fromTo('#wimg_{wid}',{{scale:1}},{{scale:1.05,duration:{dur:.3f},ease:'sine.inOut',immediateRender:false}},{a:.3f});",
+            f"tl.to('#{wid}',{{autoAlpha:0,y:-10,duration:.22,ease:'power2.in'}},{max(a + .22, b - .22):.3f});",
             f"tl.set('#{wid}',{{autoAlpha:0}},{b:.3f});",
         ]
     return html, tw
@@ -204,27 +216,28 @@ def broll_cutaways():
                 continue
         dur = max(0.4, b - a)
         is_vid = src.lower().endswith(('.mp4', '.webm', '.mov'))
+        # Include class 'g' so full-bleed cutaways inherit the exact same camera color grade as #bgv!
         if is_vid:
-            inner = (f'<div id="brm_{bid}" class="brmedia"><video id="vbr_{bid}" src="{src}" muted playsinline '
+            inner = (f'<div id="brm_{bid}" class="brmedia g"><video id="vbr_{bid}" src="{src}" muted playsinline '
                      f'data-start="{max(0.0, a - .05):.3f}" data-media-start="0" data-duration="{dur + .1:.3f}" '
                      f'data-track-index="{60 + k}"></video></div>')
         else:
-            inner = f'<div id="brm_{bid}" class="brmedia"><img src="{src}" alt="" /></div>'
+            inner = f'<div id="brm_{bid}" class="brmedia g"><img class="optplate" src="{src}" alt="" /></div>'
         html.append(f'<div id="{bid}" class="brcut">{inner}</div>')
 
         if motion == 'pull_out':
-            m_from, m_to = '{scale:1.10,x:0}', '{scale:1.0,x:0'
+            m_from, m_to = '{scale:1.065,x:0}', '{scale:1.0,x:0'
         elif motion == 'pan_right':
-            m_from, m_to = '{scale:1.09,x:-34}', '{scale:1.09,x:34'
+            m_from, m_to = '{scale:1.065,x:-24}', '{scale:1.065,x:24'
         elif motion == 'pan_left':
-            m_from, m_to = '{scale:1.09,x:34}', '{scale:1.09,x:-34'
+            m_from, m_to = '{scale:1.065,x:24}', '{scale:1.065,x:-24'
         else:
-            m_from, m_to = '{scale:1.0,x:0}', '{scale:1.09,x:0'
+            m_from, m_to = '{scale:1.0,x:0}', '{scale:1.062,x:0'
 
         tw += [
             f"gsap.set('#{bid}',{{autoAlpha:0}});",
             f"tl.set('#{bid}',{{autoAlpha:1}},{a:.3f});",
-            f"tl.fromTo('#brm_{bid}',{m_from},{m_to},duration:{dur:.3f},ease:'none',immediateRender:false}},{a:.3f});",
+            f"tl.fromTo('#brm_{bid}',{m_from},{m_to},duration:{dur:.3f},ease:'sine.inOut',immediateRender:false}},{a:.3f});",
             f"tl.set('#{bid}',{{autoAlpha:0}},{b:.3f});",
         ]
     return html, tw
@@ -235,8 +248,8 @@ def parallax_pushes():
     for a, b, bg_s, sub_s in PARALLAX_SHOTS:
         dur = max(0.4, b - a - 0.004)
         tw += [
-            f"tl.fromTo('#bgv',{{scale:1}},{{scale:{bg_s:.3f},duration:{dur:.3f},ease:'none',immediateRender:false}},{a:.3f});",
-            f"tl.fromTo('#cutwrap',{{scale:1}},{{scale:{sub_s:.3f},duration:{dur:.3f},ease:'none',immediateRender:false}},{a:.3f});",
+            f"tl.fromTo('#bgv',{{scale:1}},{{scale:{bg_s:.3f},duration:{dur:.3f},ease:'sine.inOut',immediateRender:false}},{a:.3f});",
+            f"tl.fromTo('#cutwrap',{{scale:1}},{{scale:{sub_s:.3f},duration:{dur:.3f},ease:'sine.inOut',immediateRender:false}},{a:.3f});",
             f"tl.set(['#bgv','#cutwrap'],{{scale:1}},{b - .002:.3f});",
         ]
     return tw
@@ -485,19 +498,21 @@ html,body{{width:1080px;height:1920px;overflow:hidden;background:#000}}
 .chandle{{margin:14px auto 0;width:max-content;max-width:330px;padding:8px 16px;border-radius:99px;background:rgba(10,10,12,.78);
   color:#fff;font:600 24px Inter;letter-spacing:-.2px}}
 
-/* AI editorial visual cards, behind-speaker wall visuals & full-bleed B-roll cutaways */
+/* TVC cinema visual plates, behind-speaker wall canvases & optical-matched B-roll cutaways */
 .aicard{{position:absolute;z-index:8}}
-.aiframe{{border-radius:28px;overflow:hidden;background:#14161d;border:5px solid rgba(255,248,239,.94);
-  box-shadow:0 30px 70px rgba(0,0,0,.52),0 8px 20px rgba(0,0,0,.28)}}
-.aiframe img{{width:100%;height:100%;object-fit:cover;display:block;transform-origin:50% 50%}}
-.ailabel{{margin:12px auto 0;width:max-content;max-width:100%;padding:8px 18px;border-radius:99px;background:rgba(14,16,22,.86);
-  border:1.5px solid rgba(250,230,122,.45);color:#FFF8EF;font:600 23px Inter;letter-spacing:-.2px}}
-.wallvis{{position:absolute;z-index:2;border-radius:30px;overflow:hidden;background:#14161d;
-  border:3px solid rgba(255,255,255,.22);box-shadow:0 34px 72px rgba(0,0,0,.48)}}
-.wallvis img{{width:100%;height:100%;object-fit:cover;display:block;transform-origin:50% 50%}}
+.aiframe{{border-radius:18px;overflow:hidden;background:#0e1016;border:1.5px solid rgba(255,255,255,.20);
+  box-shadow:0 28px 64px rgba(0,0,0,.54),0 6px 18px rgba(0,0,0,.28)}}
+.aiframe img,.wallvis img,.optplate{{width:100%;height:100%;object-fit:cover;display:block;transform-origin:50% 50%;
+  filter:contrast(.98) saturate(.91) brightness(.97)}}
+.ailabel{{margin:10px auto 0;width:max-content;max-width:100%;padding:7px 16px;border-radius:8px;background:rgba(12,14,20,.82);
+  border:1px solid rgba(255,255,255,.16);color:#F7F4EE;font:600 18px Montserrat,Inter;letter-spacing:.14em;text-transform:uppercase;
+  display:flex;align-items:center;gap:10px}}
+.aidot{{width:5px;height:5px;background:{YEL};display:inline-block}}
+.wallvis{{position:absolute;z-index:2;border-radius:20px;overflow:hidden;background:#0e1016;
+  border:1.5px solid rgba(255,255,255,.18);box-shadow:0 34px 72px rgba(0,0,0,.50)}}
 .brcut{{position:absolute;inset:0;z-index:5;overflow:hidden;background:#000}}
 .brmedia{{width:100%;height:100%;transform-origin:50% 50%}}
-.brmedia img,.brmedia video{{width:100%;height:100%;object-fit:cover;display:block}}
+.brmedia video{{width:100%;height:100%;object-fit:cover;display:block}}
 
 /* look overlays */
 .fx{{position:absolute;inset:0;pointer-events:none}}

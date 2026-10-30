@@ -139,13 +139,13 @@ One cutout at a time (about 1.5 GB of RAM). It prints a progress line every 30 s
 ### 5. AI Visuals & Motion Graphics in Parallel (Anti-Static Rule — as soon as the EDL is locked)
 **Never let a talking-head shot sit bare for more than `4.0–4.5s` with only subtitles** — that makes the reel feel stiff ("đơ") and dry ("khô"). Right after locking `edl.json`, follow `references/ai-motion-and-visuals.md` (and `references/anti-ai-slop.md` Max-2 rule) and launch visual/motion tasks in parallel while `cutout.py` runs:
 
-1. **Proactive AI-Generated Visuals (`image-generator` subagent -> `<project>/assets/ai_visuals/`):**
-   - Scan the script for concrete nouns, metaphors, pain points, examples, products, locations, or outcomes that lack real B-roll footage.
-   - Spawn `image-generator` subagents in parallel to create high-taste, text-free editorial illustrations, visual metaphor art, or cinematic 35mm-style B-roll imagery (explicitly prompt *"no text, no watermarks, no neon sci-fi clichés"* and match the active look palette).
-   - Composite them in `build.py` using the template's built-in helpers:
-     - `AI_CARDS` (`ai_cards()`): Floating tilted editorial cards (`z-index: 8`) beside/below the speaker (`y <= 1470`) with live inner Ken Burns zoom (`1.0 -> 1.12`) + caption pill.
-     - `WALL_VISUALS` (`wall_visuals()`): Wide visual/diagram canvas placed on the wall **behind the speaker cutout** (`z-index: 2`) for 3-layer depth.
-     - `BROLL_CUTAWAYS` (`broll_cutaways()`): Full-bleed `1.8s–3.2s` 9:16 B-roll cutaway (`z-index: 5`, L-cut over continuous speech) with Ken Burns camera drift.
+1. **Proactive Photorealistic TVC Plates (`image-generator` subagent -> `<project>/assets/ai_visuals/`):**
+   - Scan the script for concrete nouns, objects, atmospheres, products, locations, or outcomes that lack real B-roll footage.
+   - Spawn `image-generator` subagents in parallel using **live-action 35mm TVC cinematography prompts** (*ARRI Alexa / Sony FX3, 50mm f/2.0 prime lens, directional window key light + negative fill, natural surface micro-texture, Kodak Vision3 neutral color science*). **Default to photorealistic tabletop/macro/architectural cutaways** — NEVER close-up AI faces/hands, NEVER cartoon/neon AI art, NEVER text inside images, and NEVER label cards `"AI VISUAL"` or `"MINH HỌA AI"`.
+   - Composite them in `build.py` using the template's optical-matched TVC helpers (`0°` clean architectural alignment by default, `1.5px` specular glass bezel, `sine.inOut` restrained slider drift):
+     - `AI_CARDS` (`ai_cards()`): Smoked-glass cinema PiP plate (`z-index: 8`, `rot=0` default) beside/below the speaker (`y <= 1470`) with restrained `1.0 -> 1.065` gimbal drift + tracked uppercase kicker.
+     - `WALL_VISUALS` (`wall_visuals()`): Wide cinema plate placed on the wall **behind the speaker cutout** (`z-index: 2`) for 3-layer studio depth.
+     - `BROLL_CUTAWAYS` (`broll_cutaways()`): Full-bleed `1.8s–3.2s` 9:16 B-roll cutaway (`z-index: 5`, automatically inherits the reel's `.g` camera color grade!) with eased slider drift over continuous speech.
 2. **Parallel HyperFrames Motion Sub-Agents (`references/overlays.md` -> `<project>/agents/<name>/`):**
    - Do not wait for the script to literally name a software UI! Spawn parallel sub-agents to render transparent VP9 `.webm` motion inserts whenever the speaker mentions:
      - **Metrics / Numbers / Growth:** Animated counter card (`0 -> 10x`, `+85%`), filling bar/line chart.

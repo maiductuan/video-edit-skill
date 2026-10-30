@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 """Assemble 16:9 YouTube timeline (<project>/assets/base_16x9.mp4) from sources.json and edl.json.
-Supports:
-  - "aroll": talking-head / narration segment (optional zoom, cx, cy for 4K punch-in, plus dynamic
-             camera "motion": "push_in" | "pull_out" | "pan_right" | "pan_left" | "none")
-  - "broll": scenic/food video OR AI-generated image ("image": "assets/ai_visuals/scene.png" or image clip ID)
-             with automatic 4K-supersampled 60fps Ken Burns camera motion ("push_in", "pull_out",
-             "pan_right", "pan_left", "drift_up", "drift_down")
-  - "aroll_with_broll": continuous A-roll speech audio while cutting the video picture to one or more
-                        broll_inserts (each insert can be either a video clip OR an AI-generated image
-                        with Ken Burns / dynamic camera motion!):
-                        [{"clip": "c2", "src_in": 1.0, "start_offset": 3.0, "duration": 4.0, "motion": "push_in"},
-                         {"image": "assets/ai_visuals/map.png", "start_offset": 8.0, "duration": 3.5, "motion": "pan_right"}]
+Engineered for TVC / Documentary realism:
+  - "aroll": talking-head / narration segment (optional 4K punch-in + eased gimbal camera drift)
+  - "broll": real scenic/food video OR photorealistic AI plate ("image": "assets/ai_visuals/scene.png")
+             processed with 4K-supersampled sinusoidal gimbal inertia (4-7% subtle dolly/pan) AND
+             TVC Optical Plate Matching (highlight/chroma taming, subtle lens falloff, fine luma sensor
+             micro-dither) so still plates blend seamlessly with real camera footage without looking "AI".
+  - "aroll_with_broll": continuous A-roll speech audio with J/L-cut video & optical-matched image inserts.
 
 Usage:
   PY assemble.py <project_dir> [--fps 60]
@@ -83,7 +79,7 @@ def crop_filter(zoom, cx, cy, sw, sh):
 
 
 def video_motion_filter(zoom=1.0, cx=0.5, cy=0.5, sw=1920, sh=1080, fps=60, motion='none', dur=4.0, amt=None):
-    """Build 16:9 scale+crop chain with optional smooth dynamic push_in, pull_out, pan_right, or pan_left."""
+    """Build 16:9 scale+crop chain with subtle TVC gimbal-eased dolly/pan motion (4-6% restrained drift)."""
     c = crop_filter(zoom, cx, cy, sw, sh)
     motion = (motion or 'none').lower()
     d = max(0.2, float(dur))
@@ -93,24 +89,25 @@ def video_motion_filter(zoom=1.0, cx=0.5, cy=0.5, sw=1920, sh=1080, fps=60, moti
             f'crop=1920:1080,fps={fps},format=yuv420p'
         )
 
-    m_amt = float(amt) if amt is not None else 0.065
-    m_amt = max(0.02, min(0.22, m_amt))
-    prog = f'clip(t/{d:.3f},0,1)'
+    # Restrained TVC dolly amplitude: 4.5% default so camera movement feels physical, never robotic
+    m_amt = float(amt) if amt is not None else 0.045
+    m_amt = max(0.02, min(0.14, m_amt))
+    # Sinusoidal ease-in-out camera inertia: 0.5 - 0.5*cos(PI * t / d)
+    prog = f'(0.5-0.5*cos(PI*clip(t/{d:.3f},0,1)))'
 
     if motion in ('pan_right', 'pan_left'):
         pw = round(1920 * (1.0 + m_amt) / 2) * 2
         ph = round(1080 * (1.0 + m_amt) / 2) * 2
         dx = max(2, pw - 1920)
         dy = max(0, (ph - 1080) // 2)
-        x_expr = f'{dx}*({prog})' if motion == 'pan_right' else f'{dx}*(1-{prog})'
+        x_expr = f'{dx}*{prog}' if motion == 'pan_right' else f'{dx}*(1-{prog})'
         return (
             f'{c}scale={pw}:{ph}:force_original_aspect_ratio=increase:flags=lanczos,'
             f'crop={pw}:{ph},fps={fps},'
             f"crop=1920:1080:x='{x_expr}':y='{dy}',format=yuv420p"
         )
 
-    # push_in or pull_out on video stream
-    z_expr = f'(1.0+{m_amt:.4f}*({prog}))' if motion != 'pull_out' else f'(1.0+{m_amt:.4f}*(1-{prog}))'
+    z_expr = f'(1.0+{m_amt:.4f}*{prog})' if motion != 'pull_out' else f'(1.0+{m_amt:.4f}*(1-{prog}))'
     return (
         f'{c}scale=1920:1080:force_original_aspect_ratio=increase:flags=lanczos,'
         f'crop=1920:1080,fps={fps},'
@@ -119,15 +116,21 @@ def video_motion_filter(zoom=1.0, cx=0.5, cy=0.5, sw=1920, sh=1080, fps=60, moti
     )
 
 
-def image_ken_burns_filter(dur=4.0, fps=60, motion='push_in', amt=None):
-    """4K-supersampled (3840x2160) Ken Burns motion filter for AI-generated B-roll images (zero pixel jitter)."""
+def image_ken_burns_filter(dur=4.0, fps=60, motion='push_in', amt=None, optical_match=True):
+    """4K-supersampled TVC Dolly/Slider filter for still/AI plates with Optical Camera Sensor Matching:
+       - Sinusoidal gimbal inertia (zero mechanical linear stiffness)
+       - Restrained 6.0% physical slider travel
+       - Highlight/chroma de-plasticizing + subtle lens falloff + fine temporal luma sensor micro-dither
+         so AI plates blend seamlessly into real mirrorless/phone camera footage.
+    """
     motion = (motion or 'push_in').lower()
     if motion in ('none', 'static'):
         motion = 'push_in'
-    m_amt = float(amt) if amt is not None else 0.10
-    m_amt = max(0.03, min(0.25, m_amt))
+    m_amt = float(amt) if amt is not None else 0.062
+    m_amt = max(0.025, min(0.16, m_amt))
     n_frames = max(2, int(round(float(dur) * fps)))
-    p = f'(on/{n_frames})'
+    # Smooth sinusoidal slider curve instead of robotic linear on/N
+    p = f'(0.5-0.5*cos(PI*on/{n_frames}))'
 
     if motion == 'pull_out':
         z = f'{1.0 + m_amt:.4f}-{m_amt:.4f}*{p}'
@@ -149,21 +152,30 @@ def image_ken_burns_filter(dur=4.0, fps=60, motion='push_in', amt=None):
         z = f'{1.0 + m_amt:.4f}'
         x = 'iw/2-(iw/zoom/2)'
         y = f'(ih-ih/zoom)*{p}'
-    else:  # push_in (default)
+    else:  # push_in (default subtle TVC dolly-in)
         z = f'1.0+{m_amt:.4f}*{p}'
         x = 'iw/2-(iw/zoom/2)'
         y = 'ih/2-(ih/zoom/2)'
 
+    optical_chain = ''
+    if optical_match:
+        # Tame AI hyper-saturation & harsh contrast, add natural lens corner falloff & subtle luma sensor dither
+        optical_chain = (
+            'eq=contrast=0.985:saturation=0.93:brightness=-0.005,'
+            'vignette=PI/9,'
+            'noise=c0s=3:c0f=t,'
+        )
+
     return (
         'scale=3840:2160:force_original_aspect_ratio=increase:flags=lanczos,crop=3840:2160,'
         f"zoompan=z='{z}':x='{x}':y='{y}':d={n_frames}:s=1920x1080:fps={fps},"
-        'format=yuv420p'
+        f'{optical_chain}format=yuv420p'
     )
 
 
-def render_image_segment(img_path, dur, fps, motion, amt, out_mp4):
-    """Render an AI-generated / photo still image into a 1920x1080 video clip with Ken Burns motion + silent stereo AAC."""
-    vf = image_ken_burns_filter(dur=dur, fps=fps, motion=motion, amt=amt)
+def render_image_segment(img_path, dur, fps, motion, amt, out_mp4, optical_match=True):
+    """Render a still/AI image into a TVC-matched 1920x1080 video plate with slider motion + silent stereo AAC."""
+    vf = image_ken_burns_filter(dur=dur, fps=fps, motion=motion, amt=amt, optical_match=optical_match)
     subprocess.run([
         FF, '-loglevel', 'error', '-y',
         '-i', img_path,
@@ -227,9 +239,10 @@ def main():
         out_seg = os.path.join(work, f'seg_{k:03d}.mp4')
         motion = seg.get('motion') or ('push_in' if is_img else 'none')
         m_amt = seg.get('motion_amt')
+        opt_match = seg.get('optical_match', True)
 
         if is_img:
-            render_image_segment(media_path, dur, fps, motion, m_amt, out_seg)
+            render_image_segment(media_path, dur, fps, motion, m_amt, out_seg, optical_match=opt_match)
         else:
             sw, sh = size(media_path)
             vf_main = video_motion_filter(
@@ -264,9 +277,11 @@ def main():
                     out_tag = f'[vov{bi}]'
 
                     if is_image_file(b_path):
-                        # Pre-render smooth 4K-supersampled Ken Burns clip for this image B-roll insert
                         kb_tmp = os.path.join(work, f'seg_{k:03d}_kb_{bi:02d}.mp4')
-                        render_image_segment(b_path, b_dur, fps, b_motion, b_amt, kb_tmp)
+                        render_image_segment(
+                            b_path, b_dur, fps, b_motion, b_amt, kb_tmp,
+                            optical_match=ins.get('optical_match', True)
+                        )
                         inputs += ['-i', kb_tmp]
                         fc_parts.append(f'[{inp_idx}:v]fps={fps},setpts=PTS-STARTPTS+{b_off:.3f}/TB{v_tag}')
                     else:

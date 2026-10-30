@@ -18,12 +18,12 @@ PLATFORM_FILE = os.path.join(SKILL_DIR, '.platform.json')
 SFX_DIR = os.path.join(SKILL_DIR, 'assets', 'sfx')
 
 GRADE_FILTERS = {
-    'vibrant_vlog': 'eq=contrast=1.05:saturation=1.12:brightness=0.012',
-    'cinema_travel': 'eq=contrast=1.08:saturation=0.96:brightness=-0.008,colorbalance=rs=-0.03:gs=0.0:bs=0.04:rh=0.04:gh=0.02:bh=-0.03',
-    'clean_studio': 'eq=contrast=1.04:saturation=1.03:brightness=0.01',
-    'film_kodak': 'eq=contrast=1.03:saturation=0.94:brightness=0.02,colorbalance=rm=0.03:gm=0.01:bm=-0.02:rh=0.03:gh=0.01:bh=-0.03',
-    'minimal_editorial': 'eq=contrast=1.06:saturation=0.92:brightness=0.005',
-    'warm_food': 'eq=contrast=1.06:saturation=1.15:brightness=0.015,colorbalance=rh=0.03:gh=0.01:bh=-0.02',
+    'vibrant_vlog': 'eq=contrast=1.04:saturation=1.06:brightness=0.008',
+    'cinema_travel': 'eq=contrast=1.06:saturation=0.95:brightness=-0.006,colorbalance=rs=-0.025:gs=0.0:bs=0.035:rh=0.03:gh=0.015:bh=-0.025',
+    'clean_studio': 'eq=contrast=1.035:saturation=1.01:brightness=0.006',
+    'film_kodak': 'eq=contrast=1.03:saturation=0.93:brightness=0.014,colorbalance=rm=0.022:gm=0.008:bm=-0.018:rh=0.025:gh=0.01:bh=-0.022',
+    'minimal_editorial': 'eq=contrast=1.045:saturation=0.91:brightness=0.004',
+    'warm_food': 'eq=contrast=1.05:saturation=1.08:brightness=0.010,colorbalance=rh=0.025:gh=0.010:bh=-0.018',
 }
 
 
@@ -212,8 +212,9 @@ def main():
             f'fade=t=out:st={fade_out_local:.3f}:d={fade_out_d:.3f}:alpha=1,'
             f'setpts=PTS-STARTPTS+{st:.3f}/TB{ov_tag}'
         )
-        p_expr = f"clip((t-{st:.3f})/0.32,0,1)"
-        y_expr = f"{oy}+if(lt(t-{st:.3f},0.32),pow(1-{p_expr},3)*28,0)"
+        p_expr = f"clip((t-{st:.3f})/0.34,0,1)"
+        slide_px = 8 if has_vid else 18
+        y_expr = f"{oy}+if(lt(t-{st:.3f},0.34),pow(1-{p_expr},3)*{slide_px},0)"
         fc.append(
             f"{last_v}{ov_tag}overlay=x={ox}:y='{y_expr}':enable='between(t,{st:.3f},{en:.3f})':eof_action=pass:format=auto{next_v}"
         )

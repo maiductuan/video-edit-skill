@@ -1,6 +1,8 @@
-# YouTube 16:9 Graphics & Multi-Frame RGBA Motion Pack (`graphics.md`)
+# YouTube 16:9 TVC & Documentary Broadcast Motion Pack (`graphics.md`)
 
-All graphics are rendered for a **1920×1080 RGBA** canvas with full Vietnamese Unicode support (`Be Vietnam Pro` / `Avenir Next` / `Segoe UI Bold`), smooth cubic ease-out entrance & exit transitions (`0.32s` in, `0.28s` out, zero cartoon bounce), and paired subtle sound effects (`whoosh-short`, `pop`, `sparkle`, `click`, `click-soft`).
+All graphics are rendered for a **1920×1080 RGBA** canvas using **2x-supersampled Lanczos anti-aliasing**, **translucent smoked-obsidian glass plates (`alpha ~82%`) with `1px` specular hairline borders**, **wide-tracked Swiss/TVC micro-kickers (`+3.4px` character tracking)**, and **After-Effects-style `overflow: hidden` masked baseline typography reveals (`quintic ease-out` `1 - (1-t)^5`)** — designed to look like a Netflix Documentary, Sony Alpha Film, or Apple Keynote rather than boxy SaaS/AI templates.
+
+> **Strict Anti-AI-Tag Rule:** Never write `"MINH HỌA AI"`, `"AI VISUAL"`, or `"ẢNH AI"` in any `tag` or `category` field (`build_graphics.py` also strips self-referential AI labels automatically). Always write real story context (`"GÓC QUAY CHI TIẾT"`, `"PHỐ CỔ · 17:30"`, `"NGUYÊN LIỆU GỐC"`).
 
 ---
 

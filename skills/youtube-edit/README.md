@@ -11,21 +11,17 @@ Skill chuyên dựng **video YouTube ngang 16:9 (1080p60 / 4K)** dành cho **Vlo
    - Nhận diện giọng nói **Tiếng Việt & Tiếng Anh** (`faster-whisper`) tới từng câu/từ kèm bản đồ khoảng lặng (`silencedetect`).
    - Xuất bảng ảnh thu nhỏ 16:9 (`work/sheets.jpg`) giúp kiểm tra bố cục khung hình trước khi đặt đồ họa.
 
-2. **Chủ động Tạo Hình Ảnh Minh Họa AI & Chuyển Động Máy Quay (`assemble.py` + `image-generator`)**
-   - **Không để Talking-Head đứng yên quá 6 giây:** Khi đoạn nói thiếu B-roll thực tế, AI chủ động tạo ảnh minh họa editorial / ảnh B-roll điện ảnh không chữ vào `assets/ai_visuals/` bằng `image-generator`.
-   - **4K-Supersampled 60fps Ken Burns:** Mọi ảnh AI / ảnh tĩnh đưa vào `edl.json` (`type: "broll"` hoặc `broll_inserts`) đều được phóng mẫu 4K (`3840×2160`) và tạo chuyển động máy quay mượt 60fps (`push_in`, `pull_out`, `pan_right`, `pan_left`, `drift_up`) không rung giật pixel.
-   - **Dynamic Video Motion & J/L Cut:** Hỗ trợ lồng B-roll trên nền giọng nói liên tục (`aroll_with_broll`), tự động Punch-in 4K và đẩy máy mượt (`motion: "push_in"`) trên cả clip video thật.
+2. **Tạo B-Roll Chân Thực Chuẩn Điện Ảnh TVC & Optical Plate Matching (`assemble.py` + `image-generator`)**
+   - **Không để Talking-Head đứng yên quá 6 giây — Không nhìn "giả AI":** Khi thiếu B-roll thực tế, AI chủ động tạo ảnh chụp phong cách **35mm Live-Action Commercial (ARRI Alexa / Sony FX3, ống kính 50mm f/2.0, ánh sáng tự nhiên)** tập trung vào cận cảnh đồ vật, món ăn, không gian kiến trúc (tuyệt đối tránh vẽ mặt/bàn tay người AI hoặc phong cách neon/hoạt hình).
+   - **Optical Sensor Match & Gimbal Inertia:** Tự động khử độ bão hòa/tương phản "nhựa" đặc trưng của ảnh AI, thêm độ tối góc ống kính tự nhiên (`vignette`), hạt cảm biến luma siêu mịn (`35mm sensor micro-dither`) và chuyển động trượt dolly mượt theo quán tính hình sin (`4.5%–6.2%`).
 
-3. **11 Mẫu Đồ Họa & Motion Graphics RGBA Chuyển Động Thật (`build_graphics.py`)**
-   Hỗ trợ đầy đủ **tiếng Việt có dấu chuẩn Unicode (`Be Vietnam Pro`)** với cả thẻ tiêu chuẩn và **thẻ Motion đa khung hình (`.mov` RGBA 30fps)**:
-   - **Thẻ Motion & Hình Ảnh Minh Họa AI (Mới):**
-     - `visual_card`: Khung ảnh PiP bên cạnh người nói hiển thị ảnh minh họa AI kèm **hiệu ứng zoom Ken Burns sống động ngay bên trong khung bo góc** + thanh tiến trình accent.
-     - `stat_card`: Thẻ số liệu **chạy số đếm tăng dần từ 0** (`0% -> 85%`, `0đ -> 40.000đ`, `0/10 -> 9.2/10`) kết hợp thanh progress bar lấp đầy mượt mà.
-     - `checklist` (`steps_card`): Danh sách 2–4 bước / ý chính **bật ra tuần tự từng dòng theo nhịp nói** thay vì hiện cả khối chữ tĩnh.
-     - `comparison`: Bảng so sánh đôi **Trước / Sau** hoặc **Điểm trừ / Điểm cộng** xuất hiện 2 nhịp nối tiếp.
-     - `kinetic_quote`: Banner trích dẫn / luận điểm cốt lõi với thanh nhấn quét ngang mượt mà.
-     - `custom_motion`: Nhúng trực tiếp file animation `.webm` / `.mov` nền trong suốt.
-   - **Bộ Thẻ YouTube Truyền Thống:** `intro` (Đại tự mở đầu), `chapter` (Chia chương), `lower_third` (Tên món / Địa chỉ / Giá tiền / Điểm đánh giá), `callout` (Ghi chú góc trên), `subscribe` (Kêu gọi Đăng ký kênh) + **Phụ đề Tiếng Việt `.ass`**.
+3. **11 Mẫu Đồ Họa Broadcast Chuẩn TVC / Netflix Documentary (`build_graphics.py`)**
+   Khử sạch kiểu "hộp SaaS tối màu + nút vàng lòe loẹt". Toàn bộ đồ họa được vẽ **khử răng cưa 2x Supersampled Lanczos**, nền kính khói mờ tinh tế (`1px` viền specular hairline), chữ micro-kicker giãn chữ rộng (`+3.4px` tracking) và hiệu ứng chữ trồi lên từ mặt nạ ẩn (`masked baseline reveal` `quintic ease-out`):
+   - `intro`: Đại tự điện ảnh không khung hộp (frameless optical scrim) kèm đường kẻ mảnh vàng đồng bung ngang từ tâm.
+   - `lower_third` & `chapter`: Dải kính khói tối giản phong cách Michelin Guide / Netflix với vạch laser dọc mọc từ dưới lên và điểm số tối giản (`9.4` + `/10`).
+   - `visual_card`: Khung hình PiP viền mỏng `14px` tự động cân chỉnh chất màu phim cho ảnh và trượt gimbal nhẹ bên trong khung (tự động lọc bỏ các nhãn tự tố cáo như `"MINH HỌA AI"`).
+   - `stat_card`: Bảng thông số phong cách Apple Keynote với số chạy mượt và đường kẻ thanh mảnh `2.5px` kèm chấm sáng dẫn hướng.
+   - `checklist`, `comparison`, `kinetic_quote`, `callout`, `subscribe`, `custom_motion` + Phụ đề điện ảnh `.ass`.
 
 4. **6 Bộ Màu Điện Ảnh, Auto-Ducking BGM & Chuẩn Âm Thanh `-14 LUFS` (`render.py`)**
    - 6 bộ màu: `vibrant_vlog`, `warm_food`, `cinema_travel`, `clean_studio`, `film_kodak`, `minimal_editorial`.
