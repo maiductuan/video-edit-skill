@@ -16,8 +16,27 @@ SKILL_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__f
 sys.path.insert(0, os.path.join(SKILL_ROOT, 'youtube-edit', 'scripts'))
 from build_graphics import load_font, strip_emoji  # noqa: E402
 
-FF = shutil.which('ffmpeg') or '/opt/homebrew/bin/ffmpeg'
-FP = shutil.which('ffprobe') or '/opt/homebrew/bin/ffprobe'
+
+def find_bin(name):
+    p = shutil.which(name)
+    if p:
+        return p
+    for sk in ('video-edit', 'youtube-edit'):
+        pf = os.path.join(SKILL_ROOT, sk, '.platform.json')
+        if os.path.isfile(pf):
+            try:
+                with open(pf, encoding='utf-8') as fh:
+                    val = json.load(fh).get(name)
+                    if val and os.path.isfile(val):
+                        return val
+            except Exception:
+                pass
+    return f'/opt/homebrew/bin/{name}' if sys.platform == 'darwin' else name
+
+
+FF = find_bin('ffmpeg')
+FP = find_bin('ffprobe')
+VCODEC = ['-c:v', 'h264_videotoolbox', '-b:v', '16M'] if sys.platform == 'darwin' else ['-c:v', 'libx264', '-preset', 'fast', '-crf', '18']
 
 
 def probe_size(path):
@@ -113,7 +132,7 @@ def main():
                 '-loop', '1', '-t', f'{dur:.3f}', '-i', ov_png,
                 '-filter_complex', fc, '-map', '[vout]', '-map', '0:a',
                 '-af', f'highpass=f=80,afade=t=in:d=0.03,afade=t=out:st={max(0.0, dur-0.04):.3f}:d=0.04',
-                '-c:v', 'h264_videotoolbox', '-b:v', '16M',
+                *VCODEC,
                 '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', seg_out
             ], check=True)
         else:
@@ -123,7 +142,7 @@ def main():
                 '-ss', f'{t_in:.3f}', '-t', f'{dur:.3f}', '-i', clip,
                 '-vf', vf,
                 '-af', f'highpass=f=80,afade=t=in:d=0.03,afade=t=out:st={max(0.0, dur-0.04):.3f}:d=0.04',
-                '-c:v', 'h264_videotoolbox', '-b:v', '16M',
+                *VCODEC,
                 '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', seg_out
             ], check=True)
         seg_files.append(seg_out)

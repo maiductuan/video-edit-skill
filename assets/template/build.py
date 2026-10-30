@@ -11,9 +11,11 @@ Sections of the example (segment ids come from segments.json, written by scripts
   dude + tech       cool dude: dark editorial grade, tracked caps + serif punch words, wide shot then 4K close-up
   cta              Instagram profile recreation (agents/ig-follow): tap Follow, comment EDIT, with tap sounds
 
-Machinery to keep: dude_words(), cards(), girl(), orbit(), core(), claude_window(), skill_card(), ig_overlay(),
-grades(), audio(), SAFE_GUIDE, cut times from segments.json, S(t).
-Content to rewrite: GROUPS, CARDS, GIRL_BLOCKS, TRACK, SERIF, overlay files + in-times, SFX, SHIFT reference times.
+Machinery to keep: dude_words(), cards(), ai_cards(), wall_visuals(), broll_cutaways(), parallax_pushes(),
+                   girl(), orbit(), core(), claude_window(), skill_card(), ig_overlay(), grades(), audio(),
+                   SAFE_GUIDE, cut times from segments.json, S(t).
+Content to rewrite: GROUPS, CARDS, AI_CARDS, WALL_VISUALS, BROLL_CUTAWAYS, PARALLAX_SHOTS, GIRL_BLOCKS, TRACK, SERIF,
+                    overlay files + in-times, SFX, SHIFT reference times.
 
 Run from the project folder with PY, the skill's Python (see SKILL.md):
 PY build.py            writes index.html
@@ -123,6 +125,121 @@ def cards():
                f"tl.to('#{cid}',{{autoAlpha:0,scale:.7,y:-40,rotation:{rot * 2},duration:.18,ease:'power2.in'}},{b - .18:.3f});",
                f"tl.set('#{cid}',{{autoAlpha:0}},{b:.3f});"]
     return html, tw
+
+
+# ------------------------------------------------------------------ anti-static AI visuals & motion helpers
+# Populate these lists in your project build.py (images live in assets/ai_visuals/, videos in assets/broll/):
+# AI_CARDS: [(id, filename, label_or_empty, in_t, out_t, left, top, width, height, rotation_deg), ...]
+#   Floating tilted editorial card (z-index: 8, keep bottom <= 1470 safe zone) with live inner Ken Burns zoom.
+AI_CARDS = []
+
+# WALL_VISUALS: [(id, filename, in_t, out_t, left, top, width, height), ...]
+#   Wide visual / diagram placed BEHIND the speaker cutout (z-index: 2, e.g. left=40, top=235, width=1000, height=660).
+WALL_VISUALS = []
+
+# BROLL_CUTAWAYS: [(id, path_under_assets, in_t, out_t, motion), ...]
+#   Full-bleed 1080x1920 B-roll L-cut (z-index: 5, supports .png/.jpg/.webp AI scenes or .mp4 clips;
+#   motion = 'push_in' | 'pull_out' | 'pan_right' | 'pan_left').
+BROLL_CUTAWAYS = []
+
+# PARALLAX_SHOTS: [(in_t, out_t, bg_scale, subj_scale), ...]
+#   2.5D optical camera push on longer talking-head shots (e.g. (3.10, 6.80, 1.025, 1.065)).
+PARALLAX_SHOTS = []
+
+
+def ai_cards():
+    html, tw = [], []
+    for cid, fname, label, a, b, x, y, w, h, rot in AI_CARDS:
+        src = fname if '/' in fname else f'assets/ai_visuals/{fname}'
+        if not os.path.exists(src):
+            continue
+        dur = max(0.4, b - a)
+        lbl = f'<div class="ailabel">{label}</div>' if label else ''
+        html.append(
+            f'<div id="{cid}" class="aicard" style="left:{x}px;top:{y}px;width:{w}px">'
+            f'<div class="aiframe" style="width:{w}px;height:{h}px">'
+            f'<img id="aiimg_{cid}" src="{src}" alt="" /></div>{lbl}</div>'
+        )
+        tw += [
+            f"gsap.set('#{cid}',{{autoAlpha:0,rotation:{rot},scale:.88,y:42}});",
+            f"gsap.set('#aiimg_{cid}',{{scale:1,x:0,y:0}});",
+            f"tl.to('#{cid}',{{autoAlpha:1,scale:1,y:0,duration:.34,ease:'power3.out'}},{a:.3f});",
+            f"tl.fromTo('#aiimg_{cid}',{{scale:1,x:0}},{{scale:1.12,x:-10,duration:{dur:.3f},ease:'none',immediateRender:false}},{a:.3f});",
+            f"tl.to('#{cid}',{{autoAlpha:0,scale:.92,y:-24,duration:.18,ease:'power2.in'}},{max(a + .18, b - .18):.3f});",
+            f"tl.set('#{cid}',{{autoAlpha:0}},{b:.3f});",
+        ]
+    return html, tw
+
+
+def wall_visuals():
+    html, tw = [], []
+    for wid, fname, a, b, x, y, w, h in WALL_VISUALS:
+        src = fname if '/' in fname else f'assets/ai_visuals/{fname}'
+        if not os.path.exists(src):
+            continue
+        dur = max(0.4, b - a)
+        html.append(
+            f'<div id="{wid}" class="wallvis" style="left:{x}px;top:{y}px;width:{w}px;height:{h}px">'
+            f'<img id="wimg_{wid}" src="{src}" alt="" /></div>'
+        )
+        tw += [
+            f"gsap.set('#{wid}',{{autoAlpha:0,y:28,scale:.96}});",
+            f"tl.to('#{wid}',{{autoAlpha:1,y:0,scale:1,duration:.36,ease:'power3.out'}},{a:.3f});",
+            f"tl.fromTo('#wimg_{wid}',{{scale:1}},{{scale:1.07,duration:{dur:.3f},ease:'none',immediateRender:false}},{a:.3f});",
+            f"tl.to('#{wid}',{{autoAlpha:0,y:-16,duration:.2,ease:'power2.in'}},{max(a + .2, b - .2):.3f});",
+            f"tl.set('#{wid}',{{autoAlpha:0}},{b:.3f});",
+        ]
+    return html, tw
+
+
+def broll_cutaways():
+    html, tw = [], []
+    for k, (bid, fname, a, b, motion) in enumerate(BROLL_CUTAWAYS):
+        src = fname if '/' in fname else f'assets/ai_visuals/{fname}'
+        if not os.path.exists(src):
+            alt = f'assets/broll/{fname}'
+            if os.path.exists(alt):
+                src = alt
+            else:
+                continue
+        dur = max(0.4, b - a)
+        is_vid = src.lower().endswith(('.mp4', '.webm', '.mov'))
+        if is_vid:
+            inner = (f'<div id="brm_{bid}" class="brmedia"><video id="vbr_{bid}" src="{src}" muted playsinline '
+                     f'data-start="{max(0.0, a - .05):.3f}" data-media-start="0" data-duration="{dur + .1:.3f}" '
+                     f'data-track-index="{60 + k}"></video></div>')
+        else:
+            inner = f'<div id="brm_{bid}" class="brmedia"><img src="{src}" alt="" /></div>'
+        html.append(f'<div id="{bid}" class="brcut">{inner}</div>')
+
+        if motion == 'pull_out':
+            m_from, m_to = '{scale:1.10,x:0}', '{scale:1.0,x:0'
+        elif motion == 'pan_right':
+            m_from, m_to = '{scale:1.09,x:-34}', '{scale:1.09,x:34'
+        elif motion == 'pan_left':
+            m_from, m_to = '{scale:1.09,x:34}', '{scale:1.09,x:-34'
+        else:
+            m_from, m_to = '{scale:1.0,x:0}', '{scale:1.09,x:0'
+
+        tw += [
+            f"gsap.set('#{bid}',{{autoAlpha:0}});",
+            f"tl.set('#{bid}',{{autoAlpha:1}},{a:.3f});",
+            f"tl.fromTo('#brm_{bid}',{m_from},{m_to},duration:{dur:.3f},ease:'none',immediateRender:false}},{a:.3f});",
+            f"tl.set('#{bid}',{{autoAlpha:0}},{b:.3f});",
+        ]
+    return html, tw
+
+
+def parallax_pushes():
+    tw = []
+    for a, b, bg_s, sub_s in PARALLAX_SHOTS:
+        dur = max(0.4, b - a - 0.004)
+        tw += [
+            f"tl.fromTo('#bgv',{{scale:1}},{{scale:{bg_s:.3f},duration:{dur:.3f},ease:'none',immediateRender:false}},{a:.3f});",
+            f"tl.fromTo('#cutwrap',{{scale:1}},{{scale:{sub_s:.3f},duration:{dur:.3f},ease:'none',immediateRender:false}},{a:.3f});",
+            f"tl.set(['#bgv','#cutwrap'],{{scale:1}},{b - .002:.3f});",
+        ]
+    return tw
 
 
 # ------------------------------------------------------------------ cool girl section
@@ -368,6 +485,20 @@ html,body{{width:1080px;height:1920px;overflow:hidden;background:#000}}
 .chandle{{margin:14px auto 0;width:max-content;max-width:330px;padding:8px 16px;border-radius:99px;background:rgba(10,10,12,.78);
   color:#fff;font:600 24px Inter;letter-spacing:-.2px}}
 
+/* AI editorial visual cards, behind-speaker wall visuals & full-bleed B-roll cutaways */
+.aicard{{position:absolute;z-index:8}}
+.aiframe{{border-radius:28px;overflow:hidden;background:#14161d;border:5px solid rgba(255,248,239,.94);
+  box-shadow:0 30px 70px rgba(0,0,0,.52),0 8px 20px rgba(0,0,0,.28)}}
+.aiframe img{{width:100%;height:100%;object-fit:cover;display:block;transform-origin:50% 50%}}
+.ailabel{{margin:12px auto 0;width:max-content;max-width:100%;padding:8px 18px;border-radius:99px;background:rgba(14,16,22,.86);
+  border:1.5px solid rgba(250,230,122,.45);color:#FFF8EF;font:600 23px Inter;letter-spacing:-.2px}}
+.wallvis{{position:absolute;z-index:2;border-radius:30px;overflow:hidden;background:#14161d;
+  border:3px solid rgba(255,255,255,.22);box-shadow:0 34px 72px rgba(0,0,0,.48)}}
+.wallvis img{{width:100%;height:100%;object-fit:cover;display:block;transform-origin:50% 50%}}
+.brcut{{position:absolute;inset:0;z-index:5;overflow:hidden;background:#000}}
+.brmedia{{width:100%;height:100%;transform-origin:50% 50%}}
+.brmedia img,.brmedia video{{width:100%;height:100%;object-fit:cover;display:block}}
+
 /* look overlays */
 .fx{{position:absolute;inset:0;pointer-events:none}}
 #dtone{{z-index:7;background:linear-gradient(180deg,rgba(20,55,75,.16),rgba(60,40,20,.08));mix-blend-mode:soft-light}}
@@ -439,13 +570,17 @@ def build():
     back = [h for h in w_html if 'back' in h.split('class="')[1].split('"')[0]]
     front = [h for h in w_html if h not in back]
     c_html, c_tw = cards()
+    ai_html, ai_tw = ai_cards()
+    wv_html, wv_tw = wall_visuals()
+    br_html, br_tw = broll_cutaways()
+    px_tw = parallax_pushes()
     g_html, g_tw = girl()
     o_html, o_tw = orbit()
     cw_html, cw_tw = claude_window()
     ig_html, ig_tw = ig_overlay()
     s_html, s_tw = core()
     sk_html, sk_tw = skill_card()
-    tweens = grades() + cw_tw + o_tw + w_tw + c_tw + g_tw + s_tw + ig_tw + sk_tw
+    tweens = grades() + px_tw + cw_tw + wv_tw + br_tw + o_tw + w_tw + c_tw + ai_tw + g_tw + s_tw + ig_tw + sk_tw
     nl = '\n'
     return f'''<!doctype html>
 <html lang="en" data-resolution="portrait">
@@ -463,8 +598,10 @@ def build():
   <div id="stage">
     <video id="bgv" class="full g" src="assets/aroll.mp4" muted playsinline data-start="0" data-media-start="0" data-duration="{DUR:.3f}" data-track-index="0"></video>
 {nl.join(cw_html)}
+{nl.join(wv_html)}
 {nl.join(back)}
     <div id="cutwrap"><video id="cut" class="full g" src="assets/subject.webm" muted playsinline data-start="0" data-media-start="0" data-duration="{DUR:.3f}" data-track-index="1"></video></div>
+{nl.join(br_html)}
 {nl.join(o_html)}
   </div>
   <div id="dtone" class="fx dudefx"></div><div id="dvig" class="fx dudefx"></div><div id="dgrad" class="fx dudefx"></div>
@@ -472,6 +609,7 @@ def build():
   <div id="ktone" class="fx darkfx"></div><div id="kvig" class="fx darkfx"></div><div id="kgrad" class="fx darkfx"></div>
 {nl.join(front)}
 {nl.join(c_html)}
+{nl.join(ai_html)}
 {nl.join(g_html)}
 {nl.join(s_html)}
 {nl.join(sk_html)}

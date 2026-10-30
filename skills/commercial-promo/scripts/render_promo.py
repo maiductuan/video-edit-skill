@@ -17,8 +17,27 @@ SKILL_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__f
 sys.path.insert(0, os.path.join(SKILL_ROOT, 'youtube-edit', 'scripts'))
 from build_graphics import load_font, strip_emoji  # noqa: E402
 
-FF = shutil.which('ffmpeg') or '/opt/homebrew/bin/ffmpeg'
-FP = shutil.which('ffprobe') or '/opt/homebrew/bin/ffprobe'
+
+def find_bin(name):
+    p = shutil.which(name)
+    if p:
+        return p
+    for sk in ('video-edit', 'youtube-edit'):
+        pf = os.path.join(SKILL_ROOT, sk, '.platform.json')
+        if os.path.isfile(pf):
+            try:
+                with open(pf, encoding='utf-8') as fh:
+                    val = json.load(fh).get(name)
+                    if val and os.path.isfile(val):
+                        return val
+            except Exception:
+                pass
+    return f'/opt/homebrew/bin/{name}' if sys.platform == 'darwin' else name
+
+
+FF = find_bin('ffmpeg')
+FP = find_bin('ffprobe')
+VCODEC = ['-c:v', 'h264_videotoolbox', '-b:v', '18M'] if sys.platform == 'darwin' else ['-c:v', 'libx264', '-preset', 'fast', '-crf', '17']
 SFX_DIR = os.path.join(SKILL_ROOT, 'youtube-edit', 'assets', 'sfx')
 
 RATIOS = {
@@ -111,7 +130,7 @@ def make_end_card(W, H, end_cfg, brand_cfg, accent_rgba, out_mp4, fps=60):
         '-loop', '1', '-t', f'{dur:.3f}', '-i', png,
         '-f', 'lavfi', '-t', f'{dur:.3f}', '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000',
         '-vf', f'fps={fps},format=yuv420p',
-        '-c:v', 'h264_videotoolbox', '-b:v', '16M',
+        *VCODEC,
         '-c:a', 'aac', '-b:a', '192k', '-shortest', out_mp4
     ], check=True)
     os.remove(png)
@@ -177,7 +196,7 @@ def main():
                 '-ss', f'{t_in:.3f}', '-t', f'{dur:.3f}', '-i', clip,
                 '-loop', '1', '-t', f'{dur:.3f}', '-i', ov_png,
                 '-filter_complex', fc, '-map', '[vout]', '-map', '0:a?',
-                '-c:v', 'h264_videotoolbox', '-b:v', '18M',
+                *VCODEC,
                 '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', seg_out
             ], check=True)
         else:
@@ -185,7 +204,7 @@ def main():
                 FF, '-loglevel', 'error', '-y',
                 '-ss', f'{t_in:.3f}', '-t', f'{dur:.3f}', '-i', clip,
                 '-vf', f'{base_vf},format=yuv420p',
-                '-c:v', 'h264_videotoolbox', '-b:v', '18M',
+                *VCODEC,
                 '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', seg_out
             ], check=True)
 

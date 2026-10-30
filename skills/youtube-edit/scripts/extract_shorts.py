@@ -5,7 +5,9 @@ with a blurred 9:16 background canvas, centered foreground frame, and top Vietna
 Usage:
   PY extract_shorts.py <input_16x9.mp4> --start 0.0 --duration 30.0 -o <output_short.mp4> [--title "Khám Phá Hội An"]
 """
+import json
 import os
+import shutil
 import subprocess
 import sys
 from PIL import Image, ImageDraw, ImageFont
@@ -13,6 +15,27 @@ from PIL import Image, ImageDraw, ImageFont
 SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(SKILL_DIR, 'scripts'))
 from build_graphics import load_font, strip_emoji  # noqa: E402
+
+
+def get_ffmpeg():
+    p = shutil.which('ffmpeg')
+    if p:
+        return p
+    for pf in (os.path.join(SKILL_DIR, '.platform.json'),
+               os.path.join(os.path.dirname(SKILL_DIR), 'video-edit', '.platform.json')):
+        if os.path.isfile(pf):
+            try:
+                with open(pf, encoding='utf-8') as fh:
+                    ff = json.load(fh).get('ffmpeg')
+                    if ff and os.path.isfile(ff):
+                        return ff
+            except Exception:
+                pass
+    return 'ffmpeg'
+
+
+FF = get_ffmpeg()
+VCODEC = ['-c:v', 'h264_videotoolbox', '-b:v', '14M'] if sys.platform == 'darwin' else ['-c:v', 'libx264', '-preset', 'fast', '-crf', '18']
 
 
 def make_banner(title, sub, out_png):
@@ -66,12 +89,12 @@ def main():
         '[v_comp][1:v]overlay=0:0,format=yuv420p[vout]'
     )
     subprocess.run([
-        'ffmpeg', '-loglevel', 'error', '-y',
+        FF, '-loglevel', 'error', '-y',
         '-ss', f'{start:.3f}', '-t', f'{dur:.3f}', '-i', inp,
         '-loop', '1', '-t', f'{dur:.3f}', '-i', banner_png,
         '-filter_complex', fc,
         '-map', '[vout]', '-map', '0:a',
-        '-c:v', 'h264_videotoolbox', '-b:v', '14M',
+        *VCODEC,
         '-c:a', 'aac', '-b:a', '192k', out
     ], check=True)
     if os.path.isfile(banner_png):

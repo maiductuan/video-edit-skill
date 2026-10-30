@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Composite base 16:9 video + color look + animated 16:9 graphics + Vietnamese subtitles + SFX + dynamic BGM auto-ducking,
+"""Composite base 16:9 video + color look + animated 16:9 RGBA graphics (both multi-frame .mov/.webm
+motion cards and .png cards) + Vietnamese subtitles + SFX + dynamic BGM auto-ducking,
 master audio to -14 LUFS (EBU R128), and generate a QA contact sheet (<project_dir>/work/qa_sheet.jpg).
 
 Usage:
@@ -8,6 +9,7 @@ Usage:
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -33,8 +35,8 @@ def load_platform():
 
 
 PLAT = load_platform()
-FF = PLAT.get('ffmpeg') or 'ffmpeg'
-FP = PLAT.get('ffprobe') or 'ffprobe'
+FF = PLAT.get('ffmpeg') or shutil.which('ffmpeg') or 'ffmpeg'
+FP = PLAT.get('ffprobe') or shutil.which('ffprobe') or 'ffprobe'
 
 
 def duration_of(path):
@@ -80,7 +82,7 @@ def build_bgm_duck_expr(segments):
 
 
 def filter_non_slop_sfx(sfx_events, total_dur):
-    """Anti-Slop SFX Guard: cap volume <= 0.28, minimum 0.35s spacing, max 3 identical SFX in a row."""
+    """Anti-Slop SFX Guard: cap volume <= 0.28, minimum 0.25s spacing, max 3 identical SFX in a row."""
     valid = []
     last_time = -1.0
     streak_name = None
@@ -109,6 +111,8 @@ def filter_non_slop_sfx(sfx_events, total_dur):
 
 
 def main():
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     if len(sys.argv) < 2:
         print('Usage: PY render.py <project_dir> -o <output.mp4> [--bgm <music.mp3>] [--quality high|fast]')
         sys.exit(1)
@@ -135,6 +139,7 @@ def main():
 
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
     work = os.path.join(proj, 'work')
+    os.makedirs(work, exist_ok=True)
     base_video = os.path.join(proj, 'assets', 'base_16x9.mp4')
     if not os.path.isfile(base_video):
         print(f'Missing {base_video}. Run assemble.py first.')
@@ -157,6 +162,7 @@ def main():
     grade = GRADE_FILTERS.get(look, GRADE_FILTERS['vibrant_vlog'])
 
     inputs = ['-i', base_video]
+    num_inputs = 1
     fc = []
 
     # 1. Base video grade + optional ASS subtitles
@@ -167,30 +173,49 @@ def main():
     fc.append(f'[0:v]{v_chain}[v0]')
     last_v = '[v0]'
 
-    # 2. Animated RGBA graphic overlays with smooth cubic deceleration slide
+    # 2. Animated RGBA graphic & motion overlays with smooth cubic deceleration slide
     overlays = manifest.get('overlays') or []
+    active_overlays = []
     for idx, ov in enumerate(overlays):
-        inp_idx = len(inputs) // 2
+        vid_path = ov.get('video')
+        png_path = ov.get('png')
+        has_vid = bool(vid_path and os.path.isfile(vid_path))
+        has_png = bool(png_path and os.path.isfile(png_path))
+        if not has_vid and not has_png:
+            continue
+
+        inp_idx = num_inputs
         st = float(ov['start'])
         en = float(ov['end'])
         dur = max(1.5, en - st)
         fade_in = min(0.32, dur * 0.22)
-        fade_out_st = max(st + fade_in, en - min(0.28, dur * 0.22))
-        fade_out_d = max(0.12, en - fade_out_st)
+        fade_out_d = min(0.28, dur * 0.22)
+        fade_out_local = max(fade_in, dur - fade_out_d)
+        ox = int(ov.get('x', 0))
+        oy = int(ov.get('y', 0))
 
-        inputs += ['-loop', '1', '-t', f'{en + 0.1:.3f}', '-i', ov['png']]
+        if has_vid:
+            if vid_path.lower().endswith('.webm'):
+                inputs += ['-c:v', 'libvpx-vp9', '-i', vid_path]
+            else:
+                inputs += ['-i', vid_path]
+        else:
+            inputs += ['-loop', '1', '-t', f'{dur + 0.15:.3f}', '-i', png_path]
+        num_inputs += 1
+        active_overlays.append(ov)
+
         ov_tag = f'[gov{idx}]'
         next_v = f'[v{idx + 1}]'
         fc.append(
             f'[{inp_idx}:v]format=rgba,'
-            f'fade=t=in:st={st:.3f}:d={fade_in:.3f}:alpha=1,'
-            f'fade=t=out:st={fade_out_st:.3f}:d={fade_out_d:.3f}:alpha=1{ov_tag}'
+            f'fade=t=in:st=0:d={fade_in:.3f}:alpha=1,'
+            f'fade=t=out:st={fade_out_local:.3f}:d={fade_out_d:.3f}:alpha=1,'
+            f'setpts=PTS-STARTPTS+{st:.3f}/TB{ov_tag}'
         )
-        # Smooth cubic ease-out 28px upward arrival over 0.32s (no bounce/elastic slop)
         p_expr = f"clip((t-{st:.3f})/0.32,0,1)"
-        y_expr = f"if(lt(t-{st:.3f},0.32),pow(1-{p_expr},3)*28,0)"
+        y_expr = f"{oy}+if(lt(t-{st:.3f},0.32),pow(1-{p_expr},3)*28,0)"
         fc.append(
-            f"{last_v}{ov_tag}overlay=x=0:y='{y_expr}':enable='between(t,{st:.3f},{en:.3f})':format=auto{next_v}"
+            f"{last_v}{ov_tag}overlay=x={ox}:y='{y_expr}':enable='between(t,{st:.3f},{en:.3f})':eof_action=pass:format=auto{next_v}"
         )
         last_v = next_v
 
@@ -201,8 +226,9 @@ def main():
     fc.append('[0:a]aresample=48000,highpass=f=75,volume=1.0[a_base]')
 
     if bgm_file and os.path.isfile(bgm_file):
-        bgm_idx = len(inputs) // 2
+        bgm_idx = num_inputs
         inputs += ['-stream_loop', '-1', '-t', f'{total_dur:.3f}', '-i', bgm_file]
+        num_inputs += 1
         fade_out_bgm = max(0.0, total_dur - 2.2)
         duck_expr = build_bgm_duck_expr(segments)
         fc.append(
@@ -214,9 +240,9 @@ def main():
     sfx_events = filter_non_slop_sfx(manifest.get('sfx_events'), total_dur)
     for s_idx, ev in enumerate(sfx_events):
         sfx_path = os.path.join(SFX_DIR, f"{ev['name']}.mp3")
-        inp_idx = len(inputs) // 2
+        inp_idx = num_inputs
         inputs += ['-i', sfx_path]
-        # Place transient ~2 frames (40ms) early for natural visual sync
+        num_inputs += 1
         delay_ms = max(0, int(round((float(ev['time']) - 0.04) * 1000)))
         vol = float(ev['volume'])
         s_tag = f'[asfx{s_idx}]'
@@ -231,7 +257,10 @@ def main():
             f'loudnorm=I=-14:TP=-1.0:LRA=11[aout]'
         )
 
-    v_codec = ['-c:v', 'h264_videotoolbox', '-b:v', '20M' if quality == 'high' else '12M']
+    if sys.platform == 'darwin':
+        v_codec = ['-c:v', 'h264_videotoolbox', '-b:v', '20M' if quality == 'high' else '12M']
+    else:
+        v_codec = ['-c:v', 'libx264', '-preset', 'medium' if quality == 'high' else 'fast', '-crf', '16' if quality == 'high' else '20']
     cmd = [
         FF, '-loglevel', 'error', '-y',
         *inputs,
@@ -242,15 +271,22 @@ def main():
         '-movflags', '+faststart',
         out_file
     ]
-    print(f'Rendering 1920x1080 YouTube master -> {out_file} ({total_dur:.1f}s, look={look}, {len(overlays)} overlays, {len(sfx_events)} SFX)...', flush=True)
+    motion_cnt = sum(1 for o in active_overlays if o.get('video'))
+    print(
+        f'Rendering 1920x1080 YouTube master -> {out_file} '
+        f'({total_dur:.1f}s, look={look}, {len(active_overlays)} overlays [{motion_cnt} animated motion], {len(sfx_events)} SFX)...',
+        flush=True
+    )
     subprocess.run(cmd, check=True)
 
-    # 4. Generate QA contact sheet sampling every graphic overlay & key segment
+    # 4. Generate QA contact sheet sampling every graphic overlay (at 70% peak reveal) & key segments
     sample_times = []
-    for ov in overlays:
-        mid = round((float(ov['start']) + float(ov['end'])) / 2.0, 2)
-        if 0.0 <= mid < total_dur:
-            sample_times.append(mid)
+    for ov in active_overlays:
+        st, en = float(ov['start']), float(ov['end'])
+        # Sample at 70% into overlay so staggered checklists, 2-stage comparisons, and counters are fully revealed
+        sample_t = round(st + (en - st) * 0.70, 2)
+        if 0.0 <= sample_t < total_dur:
+            sample_times.append(sample_t)
     if not sample_times:
         step = max(1.0, total_dur / 6.0)
         sample_times = [round(step * i, 2) for i in range(1, 6) if step * i < total_dur]

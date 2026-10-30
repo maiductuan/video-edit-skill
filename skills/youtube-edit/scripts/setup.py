@@ -40,10 +40,32 @@ def say(msg):
     print(msg, flush=True)
 
 
+def find_venv_py(venv_dir):
+    for rel in (('Scripts', 'python.exe'), ('bin', 'python'), ('bin', 'python3')):
+        cand = os.path.join(venv_dir, *rel)
+        if os.path.isfile(cand):
+            return cand
+    return None
+
+
+def load_sibling_platform():
+    sib = os.path.join(os.path.dirname(SKILL_DIR), 'video-edit', '.platform.json')
+    if os.path.isfile(sib):
+        try:
+            with open(sib, encoding='utf-8') as fh:
+                return json.load(fh)
+        except Exception:
+            pass
+    return {}
+
+
 def find_tool(name):
     p = shutil.which(name)
     if p:
         return os.path.abspath(p)
+    sib = load_sibling_platform()
+    if sib.get(name) and os.path.isfile(sib[name]):
+        return os.path.abspath(sib[name])
     for d in ('/opt/homebrew/bin', '/usr/local/bin', '/usr/bin'):
         cand = os.path.join(d, name)
         if os.path.isfile(cand):
@@ -52,27 +74,32 @@ def find_tool(name):
 
 
 def ensure_venv():
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     venv_dir = os.path.join(SKILL_DIR, '.venv')
-    venv_py = os.path.join(venv_dir, 'bin', 'python')
-    if os.path.isfile(venv_py):
+    venv_py = find_venv_py(venv_dir)
+    if venv_py:
         say(f'STATUS python venv OK ({venv_py})')
         return True, venv_py
 
-    # Check if sibling skill video-edit already has a ready .venv we can symlink
+    # Check if sibling skill video-edit already has a ready .venv we can link or share
     sibling_venv = os.path.join(os.path.dirname(SKILL_DIR), 'video-edit', '.venv')
-    sibling_py = os.path.join(sibling_venv, 'bin', 'python')
-    if os.path.isfile(sibling_py):
+    sibling_py = find_venv_py(sibling_venv)
+    if sibling_py:
         try:
             if os.path.islink(venv_dir) or os.path.exists(venv_dir):
                 shutil.rmtree(venv_dir, ignore_errors=True)
-            os.symlink(sibling_venv, venv_dir)
+            os.symlink(sibling_venv, venv_dir, target_is_directory=True)
+            linked_py = find_venv_py(venv_dir) or sibling_py
             say(f'STATUS python venv OK (linked to {sibling_venv})')
-            return True, venv_py
+            return True, linked_py
         except OSError:
-            pass
+            say(f'STATUS python venv OK (shared from {sibling_venv})')
+            return True, sibling_py
 
     say(f'STATUS python venv: creating {venv_dir} (faster-whisper + Pillow)...')
     subprocess.run([sys.executable, '-m', 'venv', venv_dir], check=True)
+    venv_py = find_venv_py(venv_dir)
     subprocess.run([venv_py, '-m', 'pip', 'install', '-q', '--upgrade', 'pip'], check=True)
     subprocess.run([venv_py, '-m', 'pip', 'install', '-q', 'faster-whisper==1.2.1', 'av>=11,<19', 'pillow'], check=True)
     say('STATUS python venv OK')

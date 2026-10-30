@@ -13,8 +13,28 @@ import shutil
 import subprocess
 import sys
 
-FF = shutil.which('ffmpeg') or '/opt/homebrew/bin/ffmpeg'
-FP = shutil.which('ffprobe') or '/opt/homebrew/bin/ffprobe'
+SKILL_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def find_bin(name):
+    p = shutil.which(name)
+    if p:
+        return p
+    for sk in ('video-edit', 'youtube-edit'):
+        pf = os.path.join(SKILL_ROOT, sk, '.platform.json')
+        if os.path.isfile(pf):
+            try:
+                with open(pf, encoding='utf-8') as fh:
+                    val = json.load(fh).get(name)
+                    if val and os.path.isfile(val):
+                        return val
+            except Exception:
+                pass
+    return f'/opt/homebrew/bin/{name}' if sys.platform == 'darwin' else name
+
+
+FF = find_bin('ffmpeg')
+FP = find_bin('ffprobe')
 
 
 def probe_video(path):

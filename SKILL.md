@@ -1,6 +1,6 @@
 ---
 name: video-edit
-description: "Turns raw 9:16 talking-head clips into a finished, premium Instagram reel end to end: picks the cleanest take of every line across your clips, cuts dead air, punches in from 4K, cuts you out of the background for words behind your head, applies one of three designed looks (bold kinetic words, cool girl, cool dude), builds animated UI inserts with parallel sub-agents, adds subtle sound design, and checks every cut frame by frame inside the Reels safe zone. Trigger with /video-edit or phrases like 'edit these clips', 'I dropped clips in my downloads', 'cut this into a reel', 'make this reel look fire'."
+description: "Turns raw 9:16 talking-head clips into a finished, dynamic Instagram reel / TikTok / Short end to end: picks the cleanest take of every line, cuts dead air, punches in from 4K with 2.5D parallax camera motion, cuts you out of the background for words & visuals behind your head, proactively generates AI editorial visuals & B-roll cutaways + parallel animated motion graphics (UI inserts, counters, flowcharts, comparisons) so talking-head videos never feel static or dry, applies 3 designed looks (bold, cool girl, cool dude), adds subtle sound design, and checks every cut inside the Reels safe zone. Trigger with /video-edit or phrases like 'edit these clips', 'I dropped clips in my downloads', 'cut this into a reel', 'dựng video dọc 9:16', 'make this reel look fire'."
 ---
 
 # /video-edit
@@ -9,13 +9,13 @@ Raw clips in, finished reel out. The user never opens an editor: they review a p
 round is a ~2 minute re-render.
 
 Read before building: `references/looks.md` (the three looks, exact values), `references/layout.md` (safe zone,
-placement, behind-head formula), `references/gotchas.md` (every trap already hit once), `references/anti-ai-slop.md`
+placement, behind-head formula), `references/ai-motion-and-visuals.md` (**mandatory anti-static playbook: AI-generated visuals, B-roll cutaways, 2.5D parallax & motion graphics**), `references/gotchas.md` (every trap already hit once), `references/anti-ai-slop.md`
 (mandatory human-grade editorial rules — zero AI slop), and `references/pacing-and-cuts.md` (shot durations & J/L cut
-rules). Read `references/overlays.md` when the script calls for an animated insert.
+rules). Read `references/overlays.md` for parallel animated UI & motion-graphic sub-agents.
 
 > **Multi-Platform Suite Router:** This repository ships a 5-skill suite (`python3 "SK/install_all.py"` installs all 5):
-> - `/video-edit` (this skill): 9:16 Talking-Head Reels / TikTok / Shorts with subject cutout & kinetic typography behind head
-> - `/youtube-edit` (`skills/youtube-edit`): 16:9 YouTube Vlog, Food & Travel Review, and Studio Talking-Head with A/B-roll J/L cuts
+> - `/video-edit` (this skill): 9:16 Talking-Head Reels / TikTok / Shorts with subject cutout, kinetic typography behind head, AI visual cards & motion inserts
+> - `/youtube-edit` (`skills/youtube-edit`): 16:9 YouTube Vlog, Food & Travel Review, and Studio Talking-Head with A/B-roll J/L cuts, AI B-roll Ken Burns & animated RGBA motion graphics
 > - `/commercial-promo` (`skills/commercial-promo`): Multi-ratio (`9:16`, `4:5`, `1:1`, `16:9`) Product Ad & Promo with beat-sync & price badge
 > - `/podcast-interview` (`skills/podcast-interview`): `16:9` / `9:16` Dual-Speaker Split-Screen Podcast & Audiograms
 > - `/video-director` (`skills/video-director`): Master Router, 6-Gate QA Audit (`G0–G4` + EBU R128 `-14 LUFS`), Beat-Sync, and Smart Reframe
@@ -25,8 +25,8 @@ comes from that record, so never guess paths or shells: see "This machine" right
 
 ## Step 0: First-time setup (runs once)
 
-`SK` is this skill's folder (the one holding this SKILL.md), as a full path. Usually `~/.claude/skills/video-edit`;
-on Windows that is `C:/Users/<name>/.claude/skills/video-edit`.
+`SK` is this skill's folder (the one holding this SKILL.md), as a full path. Usually `~/.claude/skills/video-edit` or `~/.gemini/config/skills/video-edit`;
+on Windows that is `C:/Users/<name>/.claude/skills/video-edit` or `C:/Users/<name>/.gemini/config/skills/video-edit`.
 
 Look for `SK/config.json`.
 
@@ -51,7 +51,7 @@ and go to Step 1 once it prints READY.
    - ffmpeg / node / python venv MISSING: the line ends with the exact fix for THIS machine (winget on Windows,
      brew on Mac, apt on Linux). Give it to the user and stop until the script prints READY.
    - Windows: the user pastes the winget lines into their own PowerShell window (winget asks them to agree to its
-     terms the first time), then quits Claude Code completely and reopens it, or the new programs are not found.
+     terms the first time), then quits Claude Code / Antigravity completely and reopens it, or the new programs are not found.
    - The script downloads the 6 sound effects itself. If it still reports them MISSING (offline), that is optional:
      the reel just has no SFX until they are added.
 4. Optional, Apify (pulls reels and profile stats automatically): try a simple Apify MCP call. If it is not
@@ -95,11 +95,12 @@ One command style that works in zsh, bash, Git Bash and PowerShell:
 2. Never cover the face with text or cards. Behind-head words show at least ~70% of each letter.
 3. Captions say what was actually said: fix Whisper's mishearings of names and keywords ("Claude" often comes out
    as "cloud"/"claws", "skill" as "scale"). No em dashes in on-screen text.
-4. Sound effects subtle (template `SFX_GAIN = 0.75` of the base volumes), never louder than the voice.
-5. Credit other creators on screen (@handle) whenever their reels appear. Real numbers on the user's own profile;
+4. **Anti-Static / Anti-Dry Visual Rhythm:** Never leave an unchanged talking-head frame with only plain text for more than `4.0–4.5s`. Evolve the frame every 4–6s using 4K punch-ins, 2.5D parallax camera pushes, AI-generated editorial visual cards (`AI_CARDS` / `WALL_VISUALS`), short B-roll cutaways (`BROLL_CUTAWAYS`), or parallel HyperFrames motion graphics (`agents/`).
+5. Sound effects subtle (template `SFX_GAIN = 0.75` of the base volumes), never louder than the voice.
+6. Credit other creators on screen (@handle) whenever their reels appear. Real numbers on the user's own profile;
    anything else (commenters, chat history) is a generic placeholder, never a real person, never fabricated proof.
-6. Prove cuts from the final render, not from snapshots.
-7. Never delete the user's files. Originals are read, never modified.
+7. Prove cuts from the final render, not from snapshots.
+8. Never delete the user's files. Originals are read, never modified.
 
 ## Workflow
 
@@ -124,7 +125,7 @@ Look at `work/sheets.jpg` (setups and angles) and read `transcript.txt` (per-cli
 - Two segments in a row from the same angle: punch one in (zoom 1.3-1.9 from the 4K original, cx/cy on the chest).
 - Unsure words (keyword, CTA trigger): re-transcribe that snippet with medium.en and a prompt containing the names.
 - Format: `[{"id": "hook", "clip": "c1", "in": 12.66, "out": 15.72, "zoom": 1.0, "cx": 0.5, "cy": 0.5, "line": "..."}]`
-- Post the EDL to the user as a short table (line, clip, look per section) and keep going; do not wait.
+- Post the EDL + planned **Visual Beat Map** (which beats get AI visual cards, wall visuals, B-roll cutaways, or motion inserts) to the user as a short table and keep going; do not wait.
 
 ### 4. Assemble, transcribe, cut out
 ```bash
@@ -135,14 +136,28 @@ PY SK/scripts/headpos.py <project>                  # after the cutout: head/bod
 ```
 One cutout at a time (about 1.5 GB of RAM). It prints a progress line every 30 seconds.
 
-### 5. Inserts in parallel (as soon as the EDL is locked)
-For each animated insert the script calls for (an app on screen, the profile follow on the CTA, a file scroll),
-spawn a sub-agent in the background with the brief template in `references/overlays.md`: fixed size, fixed
-duration, beats locked to the word times, transparent webm out. Keep building the main edit while they work.
+### 5. AI Visuals & Motion Graphics in Parallel (Anti-Static Rule — as soon as the EDL is locked)
+**Never let a talking-head shot sit bare for more than `4.0–4.5s` with only subtitles** — that makes the reel feel stiff ("đơ") and dry ("khô"). Right after locking `edl.json`, follow `references/ai-motion-and-visuals.md` (and `references/anti-ai-slop.md` Max-2 rule) and launch visual/motion tasks in parallel while `cutout.py` runs:
+
+1. **Proactive AI-Generated Visuals (`image-generator` subagent -> `<project>/assets/ai_visuals/`):**
+   - Scan the script for concrete nouns, metaphors, pain points, examples, products, locations, or outcomes that lack real B-roll footage.
+   - Spawn `image-generator` subagents in parallel to create high-taste, text-free editorial illustrations, visual metaphor art, or cinematic 35mm-style B-roll imagery (explicitly prompt *"no text, no watermarks, no neon sci-fi clichés"* and match the active look palette).
+   - Composite them in `build.py` using the template's built-in helpers:
+     - `AI_CARDS` (`ai_cards()`): Floating tilted editorial cards (`z-index: 8`) beside/below the speaker (`y <= 1470`) with live inner Ken Burns zoom (`1.0 -> 1.12`) + caption pill.
+     - `WALL_VISUALS` (`wall_visuals()`): Wide visual/diagram canvas placed on the wall **behind the speaker cutout** (`z-index: 2`) for 3-layer depth.
+     - `BROLL_CUTAWAYS` (`broll_cutaways()`): Full-bleed `1.8s–3.2s` 9:16 B-roll cutaway (`z-index: 5`, L-cut over continuous speech) with Ken Burns camera drift.
+2. **Parallel HyperFrames Motion Sub-Agents (`references/overlays.md` -> `<project>/agents/<name>/`):**
+   - Do not wait for the script to literally name a software UI! Spawn parallel sub-agents to render transparent VP9 `.webm` motion inserts whenever the speaker mentions:
+     - **Metrics / Numbers / Growth:** Animated counter card (`0 -> 10x`, `+85%`), filling bar/line chart.
+     - **Steps / Lists / Frameworks:** 3-step animated flowchart or staggered checklist with drawn SVG connectors (`strokeDashoffset`).
+     - **Comparisons:** Before vs. After / Old Way vs. New Way split motion card.
+     - **App UI / Social CTA / Mixed-Media Collage:** Realistic app window, IG profile follow CTA, or GSAP parallax collage combining AI-generated PNGs from `assets/ai_visuals/`.
+3. **2.5D Optical Parallax & Camera Motion (`PARALLAX_SHOTS` in `build.py`):**
+   - On talking-head segments longer than `3.0s`, apply differential 2.5D parallax (`#bgv` `1.0 -> 1.025` vs `#cutwrap` `1.0 -> 1.065`) or 4K punch-ins so the camera never feels frozen on a dead tripod.
 
 ### 6. Build
 Copy `SK/assets/template/` into the project (build.py, hyperframes.json, package.json, assets/fonts, assets/sfx),
-then adapt build.py. It is the finished build of a real reel: keep the machinery, rewrite the content (its
+then adapt build.py. It is the finished build of a real reel: keep the machinery (`dude_words`, `cards`, `ai_cards`, `wall_visuals`, `broll_cutaways`, `parallax_pushes`, `girl`, `orbit`, `core`, `grades`, `audio`), rewrite the content (its
 docstring lists which is which).
 - Which look where: `defaultLook` for the whole reel; a line that names a look switches its section.
 - Orbit and profile grid use the user's own reels (overlays.md: Apify post scraper with their handle, or files they
@@ -168,10 +183,11 @@ that needs the user's call. Keep every version in `renders/`; back up `assets/` 
 re-assembling.
 
 ## Defaults that came out of real feedback (do not re-litigate)
-- Change the grade and captions to create a look; do not replace the background with an AI-generated room.
+- Change the grade and captions to create a look; never permanently replace the speaker's real room background with a fake AI-generated room. Instead, keep the real room and layer **framed AI visual cards (`AI_CARDS`), behind-speaker wall visuals (`WALL_VISUALS`), short 1.8–3.2s B-roll cutaways (`BROLL_CUTAWAYS`), and animated motion inserts** so the video stays dynamic and visually rich.
 - No film grain. Dark is fine, but keep the subject lit and skin from going red.
 - Lead-in captions centred in front of the speaker read better than lines pinned to the left edge.
 - Words behind the head are the signature move, but only when readable.
+- Never deliver a "talking-head + plain subtitles only" edit: every 4–5 seconds needs an intentional visual or camera beat.
 
 ---
 Built by [@maiductuan](https://instagram.com/maiductuan). Follow for daily AI automation builds, real systems, not theory.

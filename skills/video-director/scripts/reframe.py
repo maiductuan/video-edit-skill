@@ -6,13 +6,35 @@ using either smart focal crop (--mode crop) or optical blurred ambient backdrop 
 Usage:
   python3 reframe.py <input.mp4> --ratio 9:16|4:5|1:1|16:9 [--mode crop|backdrop] [--cx 0.5] [--cy 0.5] [--title "..."] -o <output.mp4>
 """
+import json
 import os
 import shutil
 import subprocess
 import sys
 
-FF = shutil.which('ffmpeg') or '/opt/homebrew/bin/ffmpeg'
-FP = shutil.which('ffprobe') or '/opt/homebrew/bin/ffprobe'
+SKILL_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def find_bin(name):
+    p = shutil.which(name)
+    if p:
+        return p
+    for sk in ('video-edit', 'youtube-edit'):
+        pf = os.path.join(SKILL_ROOT, sk, '.platform.json')
+        if os.path.isfile(pf):
+            try:
+                with open(pf, encoding='utf-8') as fh:
+                    val = json.load(fh).get(name)
+                    if val and os.path.isfile(val):
+                        return val
+            except Exception:
+                pass
+    return f'/opt/homebrew/bin/{name}' if sys.platform == 'darwin' else name
+
+
+FF = find_bin('ffmpeg')
+FP = find_bin('ffprobe')
+VCODEC = ['-c:v', 'h264_videotoolbox', '-b:v', '16M'] if sys.platform == 'darwin' else ['-c:v', 'libx264', '-preset', 'fast', '-crf', '18']
 
 RATIOS = {
     '16:9': (1920, 1080),
@@ -82,7 +104,7 @@ def main():
         subprocess.run([
             FF, '-loglevel', 'error', '-y', *ss_args, *t_args, '-i', inp,
             '-filter_complex', fc, '-map', '[vout]', '-map', '0:a?',
-            '-c:v', 'h264_videotoolbox', '-b:v', '16M', '-c:a', 'aac', '-b:a', '192k', out
+            *VCODEC, '-c:a', 'aac', '-b:a', '192k', out
         ], check=True)
     else:
         # Focal point crop
@@ -100,7 +122,7 @@ def main():
         subprocess.run([
             FF, '-loglevel', 'error', '-y', *ss_args, *t_args, '-i', inp,
             '-vf', vf, '-map', '0:v:0', '-map', '0:a?',
-            '-c:v', 'h264_videotoolbox', '-b:v', '16M', '-c:a', 'aac', '-b:a', '192k', out
+            *VCODEC, '-c:a', 'aac', '-b:a', '192k', out
         ], check=True)
 
     print(f'Reframed ({ratio}, mode={mode}) -> {out} ({tw}x{th})')

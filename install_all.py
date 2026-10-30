@@ -46,14 +46,13 @@ def sync_skill(src: Path, dst: Path, use_symlink: bool = False):
     else:
         if dst.is_symlink():
             dst.unlink()
-        elif dst.exists():
-            shutil.rmtree(dst)
         shutil.copytree(
             src,
             dst,
             ignore=shutil.ignore_patterns(
                 '.git', '.venv', '__pycache__', '*.pyc', '.DS_Store', '.platform.json', 'config.json', 'skills'
-            )
+            ),
+            dirs_exist_ok=True,
         )
         print(f"INSTALLED: {dst}")
 

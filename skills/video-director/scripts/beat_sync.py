@@ -14,8 +14,29 @@ import shutil
 import subprocess
 import sys
 
-FF = shutil.which('ffmpeg') or '/opt/homebrew/bin/ffmpeg'
-FP = shutil.which('ffprobe') or '/opt/homebrew/bin/ffprobe'
+SKILL_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def find_bin(name):
+    p = shutil.which(name)
+    if p:
+        return p
+    for sk in ('video-edit', 'youtube-edit'):
+        pf = os.path.join(SKILL_ROOT, sk, '.platform.json')
+        if os.path.isfile(pf):
+            try:
+                with open(pf, encoding='utf-8') as fh:
+                    val = json.load(fh).get(name)
+                    if val and os.path.isfile(val):
+                        return val
+            except Exception:
+                pass
+    return f'/opt/homebrew/bin/{name}' if sys.platform == 'darwin' else name
+
+
+FF = find_bin('ffmpeg')
+FP = find_bin('ffprobe')
+VCODEC = ['-c:v', 'h264_videotoolbox', '-b:v', '16M'] if sys.platform == 'darwin' else ['-c:v', 'libx264', '-preset', 'fast', '-crf', '18']
 VIDEO_EXT = ('.mp4', '.mov', '.m4v', '.mkv')
 
 
@@ -147,7 +168,7 @@ def main():
             FF, '-loglevel', 'error', '-y',
             '-ss', f'{src_in:.3f}', '-t', f'{dur:.3f}', '-i', src,
             '-an', '-vf', vf,
-            '-c:v', 'h264_videotoolbox', '-b:v', '16M', seg_out
+            *VCODEC, seg_out
         ], check=True)
         seg_files.append(seg_out)
         edl.append({'beat': k + 1, 'clip': os.path.basename(src), 'src_in': src_in, 'timeline_start': st, 'timeline_end': en, 'duration': dur})
@@ -165,7 +186,7 @@ def main():
         '-t', f'{target_dur:.3f}', '-i', music_path,
         '-filter_complex', f'[1:a]afade=t=in:st=0:d=0.5,afade=t=out:st={fade_st:.3f}:d=1.5,loudnorm=I=-14:TP=-1.0:LRA=11[aout]',
         '-map', '0:v', '-map', '[aout]',
-        '-c:v', 'h264_videotoolbox', '-b:v', '18M',
+        *VCODEC,
         '-c:a', 'aac', '-b:a', '192k', '-shortest',
         out_path
     ], check=True)
