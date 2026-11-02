@@ -15,7 +15,15 @@ from PIL import Image, ImageDraw, ImageFilter
 
 SKILL_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(SKILL_ROOT, 'youtube-edit', 'scripts'))
-from build_graphics import load_font, strip_emoji  # noqa: E402
+from build_graphics import (  # noqa: E402
+    THEMES,
+    draw_brand_spark_badge,
+    draw_glowing_underline,
+    load_font,
+    make_condensed_display_strip,
+    make_modern_glow_plate,
+    strip_emoji,
+)
 
 
 def find_bin(name):
@@ -65,44 +73,43 @@ def probe_size(path):
 
 def make_beat_overlay(W, H, beat, accent_rgba, out_png):
     img = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-    headline = strip_emoji(beat.get('headline', ''))
+    headline = strip_emoji(beat.get('headline', '')).upper()
     subline = strip_emoji(beat.get('subline', ''))
-    kicker = strip_emoji(beat.get('kicker', '')).upper()
+    kicker = strip_emoji(beat.get('kicker', ''))
     if not (headline or subline or kicker):
         img.save(out_png, 'PNG')
         return False
 
-    f_kick = load_font(22, 'bold')
-    f_head = load_font(46 if W >= 1400 else 40, 'heavy')
-    f_sub = load_font(28 if W >= 1400 else 25, 'medium')
+    theme = dict(THEMES['modern_mint'])
+    theme['accent'] = accent_rgba
+    theme['border'] = (accent_rgba[0], accent_rgba[1], accent_rgba[2], 205)
+    theme['dot_color'] = (accent_rgba[0], accent_rgba[1], accent_rgba[2], 44)
 
-    tmp = ImageDraw.Draw(img)
-    hb = tmp.textbbox((0, 0), headline, font=f_head) if headline else (0, 0, 0, 0)
-    sb = tmp.textbbox((0, 0), subline, font=f_sub) if subline else (0, 0, 0, 0)
-    card_w = min(W - 120, max(520, max(hb[2] - hb[0], sb[2] - sb[0]) + 96))
-    card_h = 128 + (42 if kicker else 0) + (44 if subline else 0)
+    head_strip = make_condensed_display_strip(headline, 48 if W >= 1400 else 40, theme, condense_x=0.84) if headline else None
+    f_kick = load_font(21, 'demi')
+    f_sub = load_font(22 if W >= 1400 else 20, 'medium')
+
+    card_w = min(W - 120, max(540, (head_strip.width if head_strip else 0) + 84))
+    card_h = 152 + (36 if kicker else 0) + (38 if subline else 0)
 
     x0 = (W - card_w) // 2
     y0 = H - card_h - (110 if H <= 1350 else 280)
-    x1, y1 = x0 + card_w, y0 + card_h
-
-    shadow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).rounded_rectangle((x0, y0 + 10, x1, y1 + 10), radius=26, fill=(0, 0, 0, 135))
-    img = Image.alpha_composite(img, shadow.filter(ImageFilter.GaussianBlur(22)))
-
+    plate = make_modern_glow_plate(W, H, (x0, y0, x0 + card_w, y0 + card_h), theme, radius=18, border_w=2)
+    img = Image.alpha_composite(img, plate)
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle((x0, y0, x1, y1), radius=26, fill=(14, 17, 24, 232), outline=(255, 255, 255, 55), width=2)
-    d.rounded_rectangle((x0 + card_w // 2 - 48, y0, x0 + card_w // 2 + 48, y0 + 6), radius=3, fill=accent_rgba)
 
-    cy = y0 + 30
+    cy = y0 + 22
     if kicker:
-        d.text((W // 2, cy + 12), kicker, font=f_kick, fill=accent_rgba, anchor='mm')
-        cy += 42
-    if headline:
-        d.text((W // 2, cy + 24), headline, font=f_head, fill=(255, 255, 255, 255), anchor='mm')
-        cy += 56
+        draw_brand_spark_badge(img, x0 + 28, cy + 2, theme, size=20)
+        d.text((x0 + 56, cy), kicker, font=f_kick, fill=theme['kicker_text'])
+        cy += 36
+    if head_strip:
+        img.alpha_composite(head_strip, dest=(x0 + 20, cy - 6))
+        draw_glowing_underline(img, x0 + 28, cy + 54, min(card_w - 56, head_strip.width - 16), theme, thickness=4)
+        cy += 68
     if subline:
-        d.text((W // 2, cy + 16), subline, font=f_sub, fill=(215, 220, 230, 255), anchor='mm')
+        d = ImageDraw.Draw(img)
+        d.text((x0 + 28, cy), f'•  {subline}', font=f_sub, fill=(248, 250, 252, 255))
 
     img.save(out_png, 'PNG')
     return True

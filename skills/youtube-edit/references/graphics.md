@@ -1,8 +1,13 @@
-# YouTube 16:9 TVC & Documentary Broadcast Motion Pack (`graphics.md`)
+# YouTube 16:9 Modern Dot-Grid & Storyboard Motion Pack (`graphics.md`)
 
-All graphics are rendered for a **1920×1080 RGBA** canvas using **2x-supersampled Lanczos anti-aliasing**, **translucent smoked-obsidian glass plates (`alpha ~82%`) with `1px` specular hairline borders**, **wide-tracked Swiss/TVC micro-kickers (`+3.4px` character tracking)**, and **After-Effects-style `overflow: hidden` masked baseline typography reveals (`quintic ease-out` `1 - (1-t)^5`)** — designed to look like a Netflix Documentary, Sony Alpha Film, or Apple Keynote rather than boxy SaaS/AI templates.
+All graphics are rendered for a **1920×1080 RGBA** canvas (and scale cleanly to **3840×2160 4K**) using the **Modern Creator / Storyboard Aesthetic**:
+1. **Dot-Grid Background (`dot background`):** Every graphic plate and storyboard board features a subtle regular matrix of glowing dots (`spacing=22px`, `radius=1.5px`) inside dark obsidian/forest surfaces so backgrounds never look flat or empty.
+2. **Two-Tier Display Typography Lockup:** A clean conversational sans-serif lead-in above (`"Claude cắt thử"` style, normal case + vector brand spark badge) paired with a **Bold Condensed Uppercase Display Headline** (`"& DỰNG STORYBOARD"` style in Mint `#4ADE80`, Anthropic Coral `#E87B55`, Cyan `#38BDF8`, or Amber `#F59E0B`) and a **thick `5px` glowing underline bar**.
+3. **Numbered Pill Cards (`①`, `②`, `③`):** Rounded dark dot-grid pill cards (`border-radius: 16px`, `2px` glowing border) with a **circular outlined number badge (`1`, `2`, `3`)** on the left and bold white 2-line Vietnamese text on the right.
+4. **Glowing Neon-Border Callout Boxes & Mini Vertical Bar-Charts:** Callout frames feature a crisp `2px` solid accent stroke + Gaussian outer neon bloom (`box-shadow` glow) and clean `•` bullet points; stat/review cards include a **2-bar vertical comparison chart** (muted grey baseline bar vs. glowing neon accent bar) or **Blur-vs-Sharp visual comparison**.
+5. **Automatic 11-Frame Static Storyboard Sheet (`work/storyboard_11frames.jpg`):** `build_graphics.py` automatically generates a 1920×1240 static storyboard board with 11 numbered frames (`①`..`⑪`) so you and the user can review all graphic placements before full video rendering.
 
-> **Strict Anti-AI-Tag Rule:** Never write `"MINH HỌA AI"`, `"AI VISUAL"`, or `"ẢNH AI"` in any `tag` or `category` field (`build_graphics.py` also strips self-referential AI labels automatically). Always write real story context (`"GÓC QUAY CHI TIẾT"`, `"PHỐ CỔ · 17:30"`, `"NGUYÊN LIỆU GỐC"`).
+> **Strict Zero-Emoji & Anti-AI-Tag Rule:** Never use emojis anywhere in graphic fields (`build_graphics.py` strips all supplementary emojis/dingbats automatically) and never write `"MINH HỌA AI"`, `"AI VISUAL"`, or `"ẢNH AI"`. You can also set `"theme": "anthropic_coral"` or `"theme": "modern_mint"` on any individual overlay in `graphics.json`.
 
 ---
 

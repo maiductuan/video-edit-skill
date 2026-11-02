@@ -14,7 +14,15 @@ from PIL import Image, ImageDraw, ImageFilter
 
 SKILL_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(SKILL_ROOT, 'youtube-edit', 'scripts'))
-from build_graphics import load_font, strip_emoji  # noqa: E402
+from build_graphics import (  # noqa: E402
+    THEMES,
+    draw_brand_spark_badge,
+    draw_glowing_underline,
+    load_font,
+    make_condensed_display_strip,
+    make_modern_glow_plate,
+    strip_emoji,
+)
 
 
 def find_bin(name):
@@ -48,34 +56,36 @@ def probe_size(path):
 
 
 def make_split_overlay(seg, title_badge, out_png):
+    theme = THEMES['modern_mint']
     img = Image.new('RGBA', (1080, 1920), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    # Center divider bar between top and bottom speaker frames
-    d.rectangle((0, 956, 1080, 964), fill=(255, 184, 0, 255))
+    d.rectangle((0, 958, 1080, 962), fill=theme['accent'])
 
     if title_badge:
-        f_b = load_font(24, 'heavy')
+        f_b = load_font(20, 'heavy')
         txt = strip_emoji(title_badge).upper()
         bb = d.textbbox((0, 0), txt, font=f_b)
         bw = (bb[2] - bb[0]) + 48
-        d.rounded_rectangle((540 - bw // 2, 932, 540 + bw // 2, 988), radius=28, fill=(18, 20, 28, 245), outline=(255, 184, 0, 255), width=3)
-        d.text((540, 960), txt, font=f_b, fill=(255, 184, 0, 255), anchor='mm')
+        pill = make_modern_glow_plate(1080, 1920, (540 - bw // 2, 934, 540 + bw // 2, 986), theme, radius=14, border_w=2)
+        img = Image.alpha_composite(img, pill)
+        ImageDraw.Draw(img).text((540, 960), txt, font=f_b, fill=theme['accent'], anchor='mm')
 
     quote = strip_emoji(seg.get('quote', ''))
     speaker = strip_emoji(seg.get('speaker_name', ''))
     if quote or speaker:
-        box = (64, 1240, 1016, 1440)
-        sh = Image.new('RGBA', (1080, 1920), (0, 0, 0, 0))
-        ImageDraw.Draw(sh).rounded_rectangle((64, 1250, 1016, 1450), radius=24, fill=(0, 0, 0, 140))
-        img = Image.alpha_composite(img, sh.filter(ImageFilter.GaussianBlur(20)))
+        box = (64, 1230, 1016, 1438)
+        plate = make_modern_glow_plate(1080, 1920, box, theme, radius=16, border_w=2)
+        img = Image.alpha_composite(img, plate)
         d = ImageDraw.Draw(img)
-        d.rounded_rectangle(box, radius=24, fill=(16, 18, 26, 232), outline=(255, 255, 255, 55), width=2)
         if speaker:
             role = strip_emoji(seg.get('speaker_role', ''))
-            label = f'{speaker}  •  {role}' if role else speaker
-            d.text((540, 1282), label, font=load_font(24, 'bold'), fill=(255, 184, 0, 255), anchor='mm')
+            label = f'{speaker} · {role}' if role else speaker
+            draw_brand_spark_badge(img, 92, 1252, theme, size=20)
+            d.text((120, 1250), label, font=load_font(21, 'demi'), fill=theme['kicker_text'])
         if quote:
-            d.text((540, 1356), quote[:54] + ('...' if len(quote) > 54 else ''), font=load_font(30, 'heavy'), fill=(255, 255, 255, 255), anchor='mm')
+            h_strip = make_condensed_display_strip(quote[:46].upper(), 36, theme, condense_x=0.84)
+            img.alpha_composite(h_strip, dest=(84, 1286))
+            draw_glowing_underline(img, 92, 1340, min(880, h_strip.width - 16), theme, thickness=4)
 
     img.save(out_png, 'PNG')
 

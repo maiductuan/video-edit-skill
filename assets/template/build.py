@@ -289,13 +289,6 @@ def girl():
         tw.append(f"gsap.set('#{bid} .gw',{{autoAlpha:0}});")
         tw.append(f"tl.to('#{bid}',{{autoAlpha:0,duration:.14}},{b - .14:.3f});")
         tw.append(f"tl.set('#{bid}',{{autoAlpha:0}},{b:.3f});")
-    for k, (x, y, sz, t) in enumerate([(130, 470, 58, 8.48), (930, 560, 40, 8.62), (900, 330, 30, 8.85)]):
-        html.append(f'<div id="sp{k}" class="spark" style="left:{x}px;top:{y}px;font-size:{sz}px">&#10022;</div>')
-        tw += [f"gsap.set('#sp{k}',{{autoAlpha:0,scale:0}});",
-               f"tl.to('#sp{k}',{{autoAlpha:1,scale:1,duration:.3,ease:'back.out(2.5)'}},{t:.3f});",
-               f"tl.to('#sp{k}',{{scale:.7,duration:.4,yoyo:true,repeat:1,ease:'sine.inOut'}},{t + .3:.3f});",
-               f"tl.to('#sp{k}',{{autoAlpha:0,duration:.14}},{GIRL_SPLIT - .14:.3f});",
-               f"tl.set('#sp{k}',{{autoAlpha:0}},{GIRL_SPLIT:.3f});"]
     return html, tw
 
 

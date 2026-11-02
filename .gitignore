@@ -11,6 +11,8 @@ skills/*/.platform.json
 skills/*/.venv/
 skills/*/assets/sfx/*.mp3
 skills/*/assets/sfx/*.part
+skills/*/assets/template/assets/sfx/*.mp3
+skills/*/assets/template/assets/sfx/*.part
 skills/*/assets/fonts/*.ttf
 *.log
 .DS_Store

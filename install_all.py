@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 install_all.py — One-command installer for the Multi-Platform Video Edit Skill Suite.
-Installs all 5 skills:
+Installs all 5 skills from skills/<name> (or repository root for video-edit):
   1. video-edit         (9:16 Reels / TikTok / Shorts talking-head)
   2. youtube-edit       (16:9 YouTube Vlog / Food & Travel Review / Studio Talking-Head)
   3. commercial-promo   (9:16 / 4:5 / 1:1 / 16:9 Product Ad & Promo)
@@ -15,7 +15,7 @@ import argparse, os, shutil, subprocess, sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent
-SUB_SKILLS = ['youtube-edit', 'commercial-promo', 'podcast-interview', 'video-director']
+ALL_SKILLS = ['video-edit', 'youtube-edit', 'commercial-promo', 'podcast-interview', 'video-director']
 
 
 def detect_default_targets():
@@ -70,13 +70,10 @@ def main():
         target_dir.mkdir(parents=True, exist_ok=True)
         print(f"\n=== Installing suite into: {target_dir} ===")
 
-        # 1. Install video-edit (root skill)
-        video_edit_dst = target_dir / 'video-edit'
-        sync_skill(REPO_ROOT, video_edit_dst, use_symlink=args.symlink)
-
-        # 2. Install sub-skills from skills/<name>
-        for name in SUB_SKILLS:
+        for name in ALL_SKILLS:
             src = REPO_ROOT / 'skills' / name
+            if not src.exists() and name == 'video-edit':
+                src = REPO_ROOT
             if not src.exists():
                 print(f"WARNING: {src} not found, skipping.")
                 continue

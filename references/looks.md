@@ -17,7 +17,7 @@ Kinetic lowercase words placed around the speaker, the big ones tucked BEHIND th
 ## Cool girl
 - Grade: `sepia(.18) saturate(.9) contrast(.93) brightness(1.05) hue-rotate(-5deg)` + warm soft-light overlay + soft warm vignette.
 - Type: small calm lowercase Inter 500 (64px) + one punch line in **Instrument Serif italic** in butter yellow (200px in the top band, 150px for lower blocks so 3 words fit one line). Cream text `#FFF8EF`.
-- Accents: yellow sparkles (✦) twinkling near the italic, optional handwritten note in Caveat 600 with a drawn SVG arrow (strokeDashoffset).
+- Accents: subtle geometric light accents near the italic, optional handwritten note in Caveat 600 with a drawn SVG arrow (strokeDashoffset). Zero emojis or cartoon sparkles.
 - No date/time stamps: they read as clutter.
 - Signature move: the creator's own reels orbit them (orbit() in the template). Each reel tile exists twice (back copy below the cutout, front copy above), positions precomputed as GSAP keyframes every 0.1s around an ellipse, autoAlpha swapping at the ring's left/right extremes. Tiles 190x338, cream border. Keep the ring inside the safe zone.
 

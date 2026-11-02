@@ -239,10 +239,11 @@ Create `<project_dir>/graphics.json` combining classic YouTube cards (`intro`, `
 }
 ```
 
-Generate the animated RGBA `.mov`/`.png` overlay assets, sound cues, and `.ass` subtitles:
+Generate the animated RGBA `.mov`/`.png` overlay assets, sound cues, `.ass` subtitles, and the **11-Frame Static Storyboard Review Sheet (`<project_dir>/work/storyboard_11frames.jpg`)**:
 ```bash
 "PY" "SK/scripts/build_graphics.py" "<project_dir>"
 ```
+**Always inspect `<project_dir>/work/storyboard_11frames.jpg` with `read_file` right after `build_graphics.py` (`① Cắt video, làm graphic thử -> ② 11 khung hình tĩnh để duyệt -> ③ Góp ý & xuất video`) to verify the modern dot-grid cards, condensed display headers, glowing borders, and numbered pills before running the full render.**
 
 ---
 

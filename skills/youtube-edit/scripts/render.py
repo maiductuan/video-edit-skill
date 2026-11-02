@@ -18,6 +18,8 @@ PLATFORM_FILE = os.path.join(SKILL_DIR, '.platform.json')
 SFX_DIR = os.path.join(SKILL_DIR, 'assets', 'sfx')
 
 GRADE_FILTERS = {
+    'modern_mint': 'eq=contrast=1.06:saturation=0.96:brightness=-0.006,colorbalance=rs=-0.025:gs=0.0:bs=0.035:rh=0.03:gh=0.015:bh=-0.025',
+    'anthropic_coral': 'eq=contrast=1.05:saturation=1.04:brightness=0.008',
     'vibrant_vlog': 'eq=contrast=1.04:saturation=1.06:brightness=0.008',
     'cinema_travel': 'eq=contrast=1.06:saturation=0.95:brightness=-0.006,colorbalance=rs=-0.025:gs=0.0:bs=0.035:rh=0.03:gh=0.015:bh=-0.025',
     'clean_studio': 'eq=contrast=1.035:saturation=1.01:brightness=0.006',
